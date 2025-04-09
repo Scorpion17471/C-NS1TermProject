@@ -1,7 +1,7 @@
 import socket
 import ssl
 
-from common.protocol import send_message, receive_message
+from cconnector import send_message, receive_message
 
 def main():
     # Server details
@@ -29,9 +29,13 @@ def main():
             tls_socket_client.connect((server_address, server_port))
             print(f"Connected to the server using TLS using version {tls_socket_client.version()}.")
             tls_socket_client.settimeout(None) # Reset timeout after connection
+
+            ### MAIN CLIENT LOOP ###
+
             # Demo Client Send message to server
             message = "Hello, TLS Server!"
             send_message(tls_socket_client, message)
+
             # Demo Client Recieve response from server
             response = receive_message(tls_socket_client)
             if response is not None:
@@ -53,6 +57,8 @@ def main():
                         # response = tls_socket_client.recv(1024).decode('utf-8')
                         # print(f"\\/\\/Received: {response}/\\/\\")
                         #################################################################################
+            
+            ### MAIN CLIENT LOOP END ###
 
         except socket.error as e:
             print(f"Could not connect to server due to error: {e}")

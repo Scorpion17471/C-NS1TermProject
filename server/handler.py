@@ -1,13 +1,27 @@
 import socket
+import ssl
 import logging
-from common.protocol import send_message, receive_message
+from sconnector import send_message, receive_message
 
-def handle_client(tls_client_socket: socket.socket, client_address):
+# Program instance main function
+def handle_client(tls_client_socket: ssl.SSLSocket, client_address):
     logging.info(f"Received connection from {client_address}, handling.")
+
+    # Client Instance Main Loop
+    # Main functions:
+    # 1. Register
+    # 2. Login
+    # 3. Add Friend
+    # 4. Send Message
+    # 5. Send File
+    # 6. Logout
+
+    # Demo client/server exchange
     try:
         output = receive_message(tls_client_socket)
         if output is not None:
             logging.info(f"Received {output} from {client_address}")
+            print(f"Received {output} from {client_address}")
             message = "Hello, your message was received"
             send_message(tls_client_socket, message)
     except socket.error as e:
@@ -19,4 +33,4 @@ def handle_client(tls_client_socket: socket.socket, client_address):
         except:
             pass
         finally:
-            tls_client_socket.close() 
+            return
