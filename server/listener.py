@@ -44,33 +44,48 @@ def start_listener(host: str, port: int, cert_file: str, key_file: str):
     try:
         while True:
             client_socket = None
-           #tls_client_socket = None        Will be used when TLS is set up
             client_address = None
             try:
-                #Accept connection to client
+                #-----Accept connection to client
                 client_socket, client_address = server_socket.accept()
                 print(f"Accepted connection from: {client_address}")
-                #TLS Wrap the connection
-                tls_client_socket = context.wrap_socket(client_socket, server_side=True)
-                #Pass off to handler
-                handle_client(tls_client_socket, client_address)
-            # except ssl.SSLError as e:
-            #     print(f"SSL ERROR during handshake with {client_address}: {e}")
-            #     # Handshake failed, ensure the plain socket is closed if it exists        Exception handling for TLS handshake
-            #     if client_socket and not tls_client_socket:
-            #         try:
-            #             client_socket.close()
-            #         except socket.error: pass 
-            except Exception as e:
-                print(f"ERROR during accept/wrap for {client_address}: {e}")
-                # if client_socket and not tls_client_socket:
-                #     try:
-                #         client_socket.close()
-                #     except socket.error: pass
-                continue #Wait for the next connection
-    except Exception as e:
-        print(F"\nUnexpected server error: {e}")
-    #close the socket
+
+                #----------- Try to wrap socket with TLS and Handle
+                try:
+                    tls_client_socket = context.wrap_socket(client_socket, server_side=True)
+                    client_socket = None
+                    handle_client(tls_client_socket, client_address)
+                except ssl.SSLError as ssl_e:
+                    logging.error(f"SSL Handshake Error with {client_address}: {ssl_e}")
+                    # client_socket is still the original unwrapped socket here.
+                    # The finally block below WILL close it.
+                except Exception as wrap_handle_e:
+                    logging.error(f"Error during TLS wrap or handling for {client_address}: {wrap_handle_e}")
+                    # If wrap failed client_socket is the original.
+                    # If wrap succeeded but handle_client failed, client_socket is null
+                finally:
+                    if client_socket:
+                        logging.warning(f"Closing raw socket for {client_address} due to wrap/handle failure.")
+                        try:
+                            client_socket.close()
+                        except socket.error as close_err:
+                            logging.error(f"Error closing raw socket for {client_address}: {close_err}")
+            except socket.error as accept_err:
+                logging.error(f"Error accepting connection: {accept_err}")
+                continue
+            except Exception as inner_loop_e:
+                logging.error(f"Unexpected error in client handling loop for {client_address or 'Unknown'}: {inner_loop_e}")
+                # Ensure cleanup if client_socket exists from accept() but failed before finally
+                if client_socket:
+                     try: client_socket.close()
+                     except: pass # 
+                continue # Continue to the next client connection attempt
+    except KeyboardInterrupt:
+        logging.info("Server shutdown (KeyboardInterrupt).")
+    except Exception as outer_loop_e:
+        logging.error(f"Fatal unexpected error in main server loop: {outer_loop_e}")
     finally:
         if server_socket:
+            logging.info("Closing server socket.")
             server_socket.close()
+            logging.info("Server stopped.")
