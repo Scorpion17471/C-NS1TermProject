@@ -49,7 +49,7 @@ def get_private():
             print(f"Error retrieving private key: {e}")
             i -= 1
             print(f"Attempts remaining: {i}")
-    print("Failed to retrieve private key after 3 attempts.") if i == 0 else print(f"Failed to retrieve private key - File not found. {e}")
+    print("Failed to retrieve private key after 3 attempts.") if i == 0 else print(f"Failed to retrieve private key - File not found.")
     return None
 
 # Retrieve the public key from the file if it exists

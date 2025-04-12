@@ -4,7 +4,6 @@ import datetime
 import os
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
-from datetime import datetime
 
 from cconnector import send_message, receive_message
 from keylogic import generate_key_pair, get_private, get_public
@@ -21,7 +20,7 @@ def main():
             os.remove("./keys/private.pem")
         
         # Generate new pseudorandom password protected private RSA key and public RSA key
-        if not generate_key_pair(SHA256.new(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f").encode()).hexdigest()[:16]):
+        if not generate_key_pair(SHA256.new(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f").encode()).hexdigest()[:16]):
             print("Key generation failed.")
             return
 
