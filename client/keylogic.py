@@ -1,6 +1,6 @@
 from Crypto.PublicKey import RSA
 
-def generate_key_pair(password):
+def generate_key_pair(password: str):
     """
     Generate a public/private RSA key pair.
     
