@@ -3,6 +3,25 @@ import ssl
 
 from cconnector import send_message, receive_message
 
+import json
+
+def send_registration_request(tls_socket, name, email, username, password):
+    """Send the registration request with user data to the server"""
+    registration_data = {
+        "action": "register",  # Action type
+        "name": name,
+        "email": email,
+        "username": username,
+        "password": password
+    }
+
+    try:
+        message = json.dumps(registration_data)  # Convert the data into JSON
+        send_message(tls_socket, message)  # Send the registration request to the server
+        print(f"Sent registration request for {username}")
+    except Exception as e:
+        print(f"Error sending registration data: {e}")
+
 def main():
     # Server details
     server_address = '127.0.0.1'  # Replace with the server's address
@@ -57,6 +76,27 @@ def main():
                         # response = tls_socket_client.recv(1024).decode('utf-8')
                         # print(f"\\/\\/Received: {response}/\\/\\")
                         #################################################################################
+            
+            ### MAIN CLIENT LOOP END ###
+
+                    
+             # Collect user registration details
+            name = input("Enter your full name: ")
+            email = input("Enter your email address: ")
+            username = input("Choose a username: ")
+            password = input("Choose a password: ")
+
+            # Send registration request to the server
+            send_registration_request(tls_socket_client, name, email, username, password)
+
+            # Receive the server response after registration request
+            response = receive_message(tls_socket_client)
+            if response:
+                print(f"Server response: {response}")
+            else:
+                print("No response from server.")        
+            
+            #################################################################################
             
             ### MAIN CLIENT LOOP END ###
 
