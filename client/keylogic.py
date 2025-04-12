@@ -49,7 +49,7 @@ def get_private():
             print(f"Error retrieving private key: {e}")
             i -= 1
             print(f"Attempts remaining: {i}")
-    print("Failed to retrieve private key after 3 attempts.") if i == 0 else print("Failed to retrieve private key - File not found.")
+    print("Failed to retrieve private key after 3 attempts.") if i == 0 else print(f"Failed to retrieve private key - File not found. {e}")
     return None
 
 # Retrieve the public key from the file if it exists
@@ -59,6 +59,6 @@ def get_public():
     """
     try:
         return RSA.import_key(open("./keys/public.pem").read())
-    except (FileNotFoundError, ValueError, TypeError, IndexError) as e:
-        print(f"Error retrieving public key: {e}")
+    except (FileNotFoundError) as e:
+        print(f"Error retrieving public key - File not found: {e}")
         return None
