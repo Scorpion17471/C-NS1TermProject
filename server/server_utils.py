@@ -3,7 +3,7 @@ import os
 import hashlib
 
 # Path to the JSON file where user data will be stored
-DATA_FILE = "user_data.json"
+DATA_FILE = "./user_data.json"
 
 def load_users():
     """Load existing user data from a JSON file"""

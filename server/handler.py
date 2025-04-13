@@ -7,7 +7,7 @@ import json
 from server_utils import create_user # Using utility function
 
 # Program instance main function
-def handle_client(tls_client_socket: ssl.SSLSocket, client_address):
+def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
     logging.info(f"Received connection from {client_address}, handling.")
 
     # Client Instance Main Loop
@@ -21,17 +21,17 @@ def handle_client(tls_client_socket: ssl.SSLSocket, client_address):
 
     # Demo client/server exchange
     try:
-        output = receive_message(tls_client_socket)
+        output = receive_message(ssl_client_socket)
         if output is not None:
             logging.info(f"Received {output} from {client_address}")
             print(f"Received {output} from {client_address}")
             message = "Hello, your message was received"
-            send_message(tls_client_socket, message)
+            send_message(ssl_client_socket, message)
 
             try:
                 data = json.loads(output)  # Parse incoming JSON message
             except json.JSONDecodeError:
-                send_message(tls_client_socket, json.dumps({
+                send_message(ssl_client_socket, json.dumps({
                     "status": "ERROR",
                     "message": "Invalid JSON format."
                 }))
@@ -42,7 +42,7 @@ def handle_client(tls_client_socket: ssl.SSLSocket, client_address):
             if action == "register":
                 required_fields = ["name", "email", "username", "password"]
                 if not all(field in data for field in required_fields):
-                    send_message(tls_client_socket, json.dumps({
+                    send_message(ssl_client_socket, json.dumps({
                         "status": "ERROR",
                         "message": "Missing required registration fields."
                     }))
@@ -54,10 +54,10 @@ def handle_client(tls_client_socket: ssl.SSLSocket, client_address):
                     data["username"],
                     data["password"]
                 )
-                send_message(tls_client_socket, json.dumps(result))
+                send_message(ssl_client_socket, json.dumps(result))
 
             else:
-                send_message(tls_client_socket, json.dumps({
+                send_message(ssl_client_socket, json.dumps({
                     "status": "ERROR",
                     "message": f"Unsupported action: {action}"
                 }))
@@ -67,8 +67,10 @@ def handle_client(tls_client_socket: ssl.SSLSocket, client_address):
     finally:
         logging.info(f"Closing handler")
         try:
-            tls_client_socket.shutdown(socket.SHUT_RDWR)
+            ssl_client_socket.shutdown(socket.SHUT_RDWR)
         except:
             pass
         finally:
+            ssl_client_socket.close()
+            logging.info(f"Closed connection for {client_address}")
             return

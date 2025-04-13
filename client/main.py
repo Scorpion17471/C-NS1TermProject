@@ -100,7 +100,7 @@ def main():
             ### MAIN CLIENT LOOP END ###
 
                     
-             # Collect user registration details
+            # Collect user registration details
             name = input("Enter your full name: ")
             email = input("Enter your email address: ")
             username = input("Choose a username: ")
