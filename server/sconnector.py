@@ -12,6 +12,7 @@ def send_message(ssl_client_socket, payload):
             # End Message = "/\/\" written as "/\\/\\"
             ssl_client_socket.sendall(("\\/\\/" + payload + "/\\/\\").encode('utf-8'))
             i = 10
+            break
         except socket.error as e:
             logging.warning(f"Error sending payload: {e}")
             continue
@@ -23,8 +24,8 @@ def send_message(ssl_client_socket, payload):
 # Server function to receive data from the client
 # returns payload if it was received
 # returns None if failed to receive data
-def receive_message(ssl_client_socket):
-    ssl_client_socket.settimeout(5)  # Set a timeout for receiving data
+def receive_message(ssl_client_socket, timeout=5):
+    ssl_client_socket.settimeout(timeout)  # Set a timeout for receiving data
     try:
         output = ""
         response = ssl_client_socket.recv(1024).decode('utf-8')

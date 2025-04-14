@@ -1,10 +1,11 @@
 import socket
 import ssl
 import logging
-from sconnector import send_message, receive_message
+import threading
 
 import json 
-from server_utils import create_user # Using utility function
+from server_utils import register_user # Using utility function
+from sconnector import send_message, receive_message
 
 # Program instance main function
 def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
@@ -19,51 +20,46 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
     # 5. Send File
     # 6. Logout
 
-    # Demo client/server exchange
+    # Client Instance Main Loop
     try:
-        output = receive_message(ssl_client_socket)
-        if output is not None:
-            logging.info(f"Received {output} from {client_address}")
-            print(f"Received {output} from {client_address}")
-            message = "Hello, your message was received"
-            send_message(ssl_client_socket, message)
-
-            try:
-                data = json.loads(output)  # Parse incoming JSON message
-            except json.JSONDecodeError:
-                send_message(ssl_client_socket, json.dumps({
-                    "status": "ERROR",
-                    "message": "Invalid JSON format."
-                }))
-                return
-
-            action = data.get("action")
-
-            if action == "register":
-                required_fields = ["name", "email", "username", "password"]
-                if not all(field in data for field in required_fields):
+        while True:
+            request = receive_message(ssl_client_socket, None)
+            if request is not None:
+                try:
+                    data = json.loads(request)  # Parse incoming JSON message
+                except json.JSONDecodeError:
                     send_message(ssl_client_socket, json.dumps({
                         "status": "ERROR",
-                        "message": "Missing required registration fields."
+                        "message": "Invalid JSON format."
                     }))
                     return
 
-                result = create_user(
-                    data["name"],
-                    data["email"],
-                    data["username"],
-                    data["password"]
-                )
-                send_message(ssl_client_socket, json.dumps(result))
+                action = data.get("action")
 
-            else:
-                send_message(ssl_client_socket, json.dumps({
-                    "status": "ERROR",
-                    "message": f"Unsupported action: {action}"
-                }))
-
+                if action == "register":
+                    register_user(ssl_client_socket, data)  # Call the register_user function from server_utils.py
+                    data = None  # Clear data after processing
+                elif action == "login":
+                    send_message(ssl_client_socket, json.dumps({
+                        "status": "OK",
+                        "message": "Login functionality not implemented yet."
+                    }))
+                    data = None  # Clear data after processing
+                elif action == "exit":
+                    send_message(ssl_client_socket, json.dumps({
+                        "status": "OK",
+                        "message": "Have a nice day!"
+                    }))
+                    break
+                else:
+                    send_message(ssl_client_socket, json.dumps({
+                        "status": "ERROR",
+                        "message": f"Unsupported action: {action}"
+                    }))
+                    data = None
+            request = None
     except socket.error as e:
-        logging.error(f"Socket error in handler for {client_address}: {e}")
+        print(f"Socket error in handler for {client_address}: {e}")
     finally:
         logging.info(f"Closing handler")
         try:
