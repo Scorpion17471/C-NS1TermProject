@@ -5,27 +5,10 @@ import os
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 
-from cconnector import send_message, receive_message
 from keylogic import generate_key_pair, get_private, get_public
+from menuoptions import send_registration_request, send_login_request, send_exit_request
 
 import json
-
-def send_registration_request(tls_socket, name, email, username, password):
-    """Send the registration request with user data to the server"""
-    registration_data = {
-        "action": "register",  # Action type
-        "name": name,
-        "email": email,
-        "username": username,
-        "password": password
-    }
-
-    try:
-        message = json.dumps(registration_data)  # Convert the data into JSON
-        send_message(tls_socket, message)  # Send the registration request to the server
-        print(f"Sent registration request for {username}")
-    except Exception as e:
-        print(f"Error sending registration data: {e}")
 
 def main():
     # Check if client key directory exists/make if not
@@ -70,62 +53,44 @@ def main():
             tls_socket_client.settimeout(None) # Reset timeout after connection
 
             ### MAIN CLIENT LOOP ###
+            while True:
+                # Display menu options to the user
+                option = 0
+                while option not in [1, 2, 3]:
+                    try:
+                        option = int(input("""Welcome to SFTP v1.0! Please register if this is your first time connecting, or login if you already have an account:
+                          1. Register
+                          2. Login
+                          3. Exit
+                        """))
+                    except ValueError:
+                        print("Invalid input. Please enter a number between 1 and 3.")
+                
+                # Register new user
+                if option == 1:
+                    send_registration_request(tls_socket_client)
 
-            # Demo Client Send message to server
-            message = "Hello, TLS Server!"
-            send_message(tls_socket_client, message)
+                # Login existing user
+                elif option == 2:
+                    send_login_request(tls_socket_client)
 
-            # Demo Client Recieve response from server
-            response = receive_message(tls_socket_client)
-            if response is not None:
-                print(f"Received: {response}")
-
-            # Client Actions:
-                # Client Requests: Send a message to the server
-                    # use client_send function to send data to the server
-                    #
-                    # client_send(tls_socket_client, {message payload})
-
-                # Client Responses: Receive a response from the server
-                    # use client_receive function to receive data from the server
-                    #
-                    # client_receive(tls_socket_client)
-                    #
-                    # Code below is demo recieve of Server Hello to Client for testing connection to server
-                        #################################################################################
-                        # response = tls_socket_client.recv(1024).decode('utf-8')
-                        # print(f"\\/\\/Received: {response}/\\/\\")
-                        #################################################################################
-            
+                # Exit the program
+                elif option == 3:
+                    send_exit_request(tls_socket_client)
+                    break
             ### MAIN CLIENT LOOP END ###
-
-                    
-             # Collect user registration details
-            name = input("Enter your full name: ")
-            email = input("Enter your email address: ")
-            username = input("Choose a username: ")
-            password = input("Choose a password: ")
-
-            # Send registration request to the server
-            send_registration_request(tls_socket_client, name, email, username, password)
-
-            # Receive the server response after registration request
-            response = receive_message(tls_socket_client)
-            if response:
-                print(f"Server response: {response}")
-            else:
-                print("No response from server.")        
-            
-            #################################################################################
-            
-            ### MAIN CLIENT LOOP END ###
-
+        except KeyboardInterrupt as e:
+            try:
+                send_exit_request(tls_socket_client)
+            finally:
+                pass
         except socket.error as e:
             print(f"Could not connect to server due to error: {e}")
             return
         finally:
             print("Closing connection.")
             tls_socket_client.close()
+            print("Connection closed.")
 
 if __name__ == "__main__":
     main()

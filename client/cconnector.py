@@ -11,6 +11,7 @@ def send_message(tls_socket_client, payload):
             # End Message = "/\/\" written as "/\\/\\"
             tls_socket_client.sendall(("\\/\\/" + payload + "/\\/\\").encode('utf-8'))
             i = 10
+            break
         except socket.error as e:
             print(f"Error sending payload: {e}")
             continue
@@ -22,8 +23,8 @@ def send_message(tls_socket_client, payload):
 # Client function to receive data from the client
 # returns payload if it was received
 # returns None if failed to receive data
-def receive_message(tls_socket_client):
-    tls_socket_client.settimeout(5)  # Set a timeout for receiving data
+def receive_message(tls_socket_client, timeout=5):
+    tls_socket_client.settimeout(timeout)  # Set a timeout for receiving data
     try:
         output = ""
         response = tls_socket_client.recv(1024).decode('utf-8')
@@ -34,7 +35,7 @@ def receive_message(tls_socket_client):
         output = output[4:-4]  # Remove the delimiters from the end of the output
     
     except socket.timeout:
-        print(f"Timed out trying to find files")
+        print(f"Timed out waiting for message")
         return None
     except socket.error as e:
         output = None
