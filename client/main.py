@@ -7,10 +7,14 @@ from Crypto.PublicKey import RSA
 
 from keylogic import generate_key_pair, get_private, get_public
 from menuoptions import send_registration_request, send_login_request, send_exit_request
-
+from encrypt import send_file
 import json
 
 def main():
+    # Check if client key directory exists/make if not
+    if not os.path.isdir("./keys"):
+        os.makedirs("./keys")
+    # Check if both client keys can be retrieved, if not generate new keys and remove old keys if they exist
     # Check if client key directory exists/make if not
     if not os.path.isdir("./keys"):
         os.makedirs("./keys")
@@ -20,8 +24,7 @@ def main():
             os.remove("./keys/public.pem")
         if os.path.isfile("./keys/private.pem"):
             os.remove("./keys/private.pem")
-        
-        # Generate new pseudorandom password protected private RSA key and public RSA key
+    # Generate new pseudorandom password protected private RSA key and public RSA key
         if not generate_key_pair(SHA256.new(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f").encode()).hexdigest()[:16]):
             print("Key generation failed.")
             return
@@ -56,12 +59,13 @@ def main():
             while True:
                 # Display menu options to the user
                 option = 0
-                while option not in [1, 2, 3]:
+                while option not in [1, 2, 3, 4]:
                     try:
                         option = int(input("""Welcome to SFTP v1.0! Please register if this is your first time connecting, or login if you already have an account:
                           1. Register
                           2. Login
                           3. Exit
+                          4. Send file
                         """))
                     except ValueError:
                         print("Invalid input. Please enter a number between 1 and 3.")
@@ -73,11 +77,12 @@ def main():
                 # Login existing user
                 elif option == 2:
                     send_login_request(tls_socket_client)
-
                 # Exit the program
                 elif option == 3:
                     send_exit_request(tls_socket_client)
                     break
+                elif option == 4:
+                    send_file(tls_socket_client)
             ### MAIN CLIENT LOOP END ###
         except KeyboardInterrupt as e:
             try:

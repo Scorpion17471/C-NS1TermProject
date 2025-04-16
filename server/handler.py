@@ -4,7 +4,7 @@ import logging
 import threading
 
 import json 
-from server_utils import register_user # Using utility function
+from server_utils import * # Using utility function
 from sconnector import send_message, receive_message
 
 # Program instance main function
@@ -51,6 +51,12 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
                         "message": "Have a nice day!"
                     }))
                     break
+                elif action == "storepk": #Save public key to share with other clients
+                    save_public_key(data)
+                elif action == "getpk":
+                    get_user_key(ssl_client_socket, data) 
+                elif action == "upload":
+                    upload_file(ssl_client_socket, data)
                 else:
                     send_message(ssl_client_socket, json.dumps({
                         "status": "ERROR",
