@@ -4,7 +4,11 @@ import logging
 import threading
 
 import json 
+<<<<<<< Updated upstream
 from server_utils import * # Using utility function
+=======
+from server_utils import register_user, add_friend # Using utility function
+>>>>>>> Stashed changes
 from sconnector import send_message, receive_message
 
 # Program instance main function
@@ -44,6 +48,9 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
                         "status": "OK",
                         "message": "Login functionality not implemented yet."
                     }))
+                    data = None  # Clear data after processing
+                elif action == "add_friend":
+                    add_friend(ssl_client_socket, data)
                     data = None  # Clear data after processing
                 elif action == "exit":
                     send_message(ssl_client_socket, json.dumps({

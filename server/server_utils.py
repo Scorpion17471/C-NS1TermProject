@@ -1,18 +1,25 @@
 import json
 import os
 import hashlib
+import threading
 
 from sconnector import send_message, receive_message
 
 # Path to the JSON file where user data will be stored
 DATA_FILE = "./user_data.json"
 
+# Create a lock for thread-safe access to the file
+lock = threading.Lock()
+
 def load_users():
     """Load existing user data from a JSON file"""
-    if not os.path.exists(DATA_FILE):
-        return {"users": []}  # If file doesn't exist, return empty data
-    with open(DATA_FILE, "r") as f:
-        return json.load(f)
+    with lock:
+        if not os.path.exists(DATA_FILE):
+            with open(DATA_FILE, "w") as f:
+                save_users({"users": []})  # Create the base file if it doesn't exist
+            return   # If file doesn't exist, return empty data
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
 
 def save_users(data):
     """Save user data to a JSON file"""
@@ -78,6 +85,12 @@ def register_user(ssl_client_socket, data):
             data["key"]
         )
         send_message(ssl_client_socket, json.dumps(result))
+
+def add_friend(ssl_client_socket, data):
+    send_message(ssl_client_socket, json.dumps({
+        "status": "OK",
+        "message": "Add friend functionality not implemented yet."
+    }))
 def get_user_key(ssl_client_socket, data):
     print(f"Received request for public key")
     name = data["username"]
