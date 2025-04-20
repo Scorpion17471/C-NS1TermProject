@@ -46,3 +46,15 @@ def create_user(name, email, username, password):
         return {"status": "OK", "message": "Registration successful"}
     except Exception as e:
         return {"status": "ERROR", "message": f"Failed to create user account: {str(e)}"}
+
+def validate_login(username, password):
+    """Validate user login by checking username and hashed password"""
+    users = load_users()["users"]
+    hashed_password = hash_password(password)
+
+    for user in users:
+        if user["username"] == username and user["password"] == hashed_password:
+            return {"status": "OK", "message": "Login successful."}
+    
+    return {"status": "INVALID_CREDENTIALS", "message": "Invalid username or password."}
+
