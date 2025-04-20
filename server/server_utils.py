@@ -174,9 +174,8 @@ def show_online_friends(ssl_client_socket, data, username=None):
         return
     else:
         try:
-            userdata = load_users()
             # Get online users
-            friends = get_online_friends(userdata, username)
+            friends = get_online_friends(load_users(), username)
             # If no friends online, notify, else return list of friends
             if not friends:
                 send_message(ssl_client_socket, json.dumps({
@@ -200,13 +199,15 @@ def show_online_friends(ssl_client_socket, data, username=None):
 def get_online_friends(userdata, username):
     output = []
     friendlist = []
+    # Get user's friendlist
     for user in userdata["users"]:
         if user["username"] == username:
             friendlist = user["friends"]
 
+    # Go through friendlist, if user is in friend's friendlist and friend is online, add username to list and then send
     for user in userdata["users"]:
-        if (user["username"] in friendlist) and (username in user["friends"]):
-            if user["online"]:
+        if user["username"] in friendlist:
+            if user["online"] and (username in user["friends"]):
                 output.append(user["username"])
     return None if not output else output
 
