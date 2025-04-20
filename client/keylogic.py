@@ -1,3 +1,5 @@
+import os
+
 from Crypto.PublicKey import RSA
 
 def generate_key_pair(password: str):
@@ -13,6 +15,7 @@ def generate_key_pair(password: str):
     print(f"Your new RSA Key Password is: {password}")
     print("Save it now as it will no longer be visible.")
     input("Press Enter to continue...")
+    os.system('cls' if os.name == 'nt' else 'clear')  # Clear the screen
     
     # Generate RSA key pair
     key = RSA.generate(2048)
@@ -59,6 +62,16 @@ def get_public():
     """
     try:
         return RSA.import_key(open("./keys/public.pem").read())
+    except (FileNotFoundError) as e:
+        print(f"Error retrieving public key - File not found: {e}")
+        return None
+
+def get_publics():
+    """
+    Retrieve the public key from the file.
+    """
+    try:
+        return open("./keys/public.pem").read()
     except (FileNotFoundError) as e:
         print(f"Error retrieving public key - File not found: {e}")
         return None
