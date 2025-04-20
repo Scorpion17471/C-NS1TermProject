@@ -63,10 +63,18 @@ venv.bak/
 # Certificate files - IMPORTANT!
 # Add any PRIVATE keys or sensitive files here. Public certs (like cert.pem) are often okay.
 # Example: If serverr.pem is a private key, add it. Check certrec.csr too.
-# certs/serverr.pem # Uncomment and modify if it's private
-# certs/certrec.csr # Uncomment and modify if it contains sensitive info or is intermediate
+certs/
+
+# Client keys
+keys/
 
 # Configuration files
 # Add any local config files with secrets/passwords
 # Example:
 # config/local_secrets.yaml
+
+# Extra clients for transfer testing
+clients/
+
+# Storage files
+*.json

@@ -6,8 +6,8 @@ from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 
 from keylogic import generate_key_pair, get_private, get_public
-from menuoptions import send_registration_request, send_login_request, send_exit_request
-from encrypt import send_file
+from menuoptions import menu1, menu2, send_registration_request, send_login_request, send_exit_request, add_friend, remove_friend, show_online#, send_DM
+#from encrypt import send_file
 import json
 
 def main():
@@ -15,11 +15,7 @@ def main():
     if not os.path.isdir("./keys"):
         os.makedirs("./keys")
     # Check if both client keys can be retrieved, if not generate new keys and remove old keys if they exist
-    # Check if client key directory exists/make if not
-    if not os.path.isdir("./keys"):
-        os.makedirs("./keys")
-    # Check if both client keys can be retrieved, if not generate new keys and remove old keys if they exist
-    if not get_private() or not get_public():
+    if not get_public() or not get_private():
         if os.path.isfile("./keys/public.pem"):
             os.remove("./keys/public.pem")
         if os.path.isfile("./keys/private.pem"):
@@ -28,7 +24,6 @@ def main():
         if not generate_key_pair(SHA256.new(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f").encode()).hexdigest()[:16]):
             print("Key generation failed.")
             return
-
     # Server details
     server_address = '127.0.0.1'  # Replace with the server's address
     server_port = 8443           # Replace with the server's port
@@ -56,33 +51,52 @@ def main():
             tls_socket_client.settimeout(None) # Reset timeout after connection
 
             ### MAIN CLIENT LOOP ###
+            login = False
             while True:
-                # Display menu options to the user
+                input("Press Enter to continue to menu")
+                os.system('cls' if os.name == 'nt' else 'clear')  # Clear the screen
                 option = 0
-                while option not in [1, 2, 3, 4]:
-                    try:
-                        option = int(input("""Welcome to SFTP v1.0! Please register if this is your first time connecting, or login if you already have an account:
-                          1. Register
-                          2. Login
-                          3. Exit
-                          4. Send file
-                        """))
-                    except ValueError:
-                        print("Invalid input. Please enter a number between 1 and 3.")
-                
-                # Register new user
-                if option == 1:
-                    send_registration_request(tls_socket_client)
+                # Session menu
+                if login:
+                    option = menu2()
+                    # Add friend
+                    if option == 1:
+                        add_friend(tls_socket_client)
 
-                # Login existing user
-                elif option == 2:
-                    send_login_request(tls_socket_client)
-                # Exit the program
-                elif option == 3:
-                    send_exit_request(tls_socket_client)
-                    break
-                elif option == 4:
-                    send_file(tls_socket_client)
+                    # Remove friend
+                    elif option == 2:
+                        remove_friend(tls_socket_client)
+                    
+                    # Show online friends
+                    elif option == 3:
+                        show_online(tls_socket_client)
+
+                    # Send file ===============WIP===============
+                    #elif option == 4:
+                        #send_file(tls_socket_client)
+
+                    # Send DM ===============WIP===============
+                    #elif option == 5:
+                        #send_message(tls_socket_client)
+                    
+                    # Logout ===============WIP===============
+                    #elif option == 6:
+                        #login = send_logout_request(tls_socket_client)
+                # Registration/login menu
+                else:
+                    option = menu1()
+                    # Register new user
+                    if option == 1:
+                        send_registration_request(tls_socket_client)
+
+                    # Login existing user ===============WIP===============
+                    elif option == 2:
+                        login = send_login_request(tls_socket_client)
+
+                    # Exit the program
+                    elif option == 3:
+                        send_exit_request(tls_socket_client)
+                        break
             ### MAIN CLIENT LOOP END ###
         except KeyboardInterrupt as e:
             try:

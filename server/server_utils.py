@@ -1,23 +1,38 @@
 import json
 import os
 import hashlib
+import threading
+import time
+import random
 
 from sconnector import send_message, receive_message
 
 # Path to the JSON file where user data will be stored
 DATA_FILE = "./user_data.json"
 
+# Function to generate a random wait time between provided seconds in 0.1 second increments default is 0.1 to 1.3 seconds
+def randomwait(lower=1, upper=13):
+    time.sleep(random.randrange(lower, upper) / 10.0)  # Simulate some processing time
+
 def load_users():
     """Load existing user data from a JSON file"""
-    if not os.path.exists(DATA_FILE):
-        return {"users": []}  # If file doesn't exist, return empty data
-    with open(DATA_FILE, "r") as f:
-        return json.load(f)
+    with threading.Lock() as loadlock:
+        if (not os.path.exists(DATA_FILE)) or (os.path.getsize(DATA_FILE) == 0):
+            with open(DATA_FILE, "w") as f:
+                json.dump({"users": []}, f, indent=4)
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
 
 def save_users(data):
     """Save user data to a JSON file"""
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+    # Get current data
+    current_data = load_users()
+    # Merge new data into/over existing data
+    current_data.update(data)
+    # Save the updated data to the file
+    with threading.Lock() as savelock:
+        with open(DATA_FILE, "w") as f:
+            json.dump(current_data, f, indent=4)
 
 def hash_password(password):
     """Hash password using SHA-256 for storage"""
@@ -54,7 +69,7 @@ def create_user(name, email, username, password, key):
 
 # Function takes in SSL socket and data from client, checks if all required fields are present, then calls create_user function to create a new user account.
 def register_user(ssl_client_socket, data):
-    print(f"Received registration data: {data}")
+    # print(f"Received registration data: {data}")
     # Check if all required fields are present and valid
     required_fields = ["name", "email", "username", "password", "key"]
     if any(not data[field] for field in required_fields):
@@ -69,7 +84,6 @@ def register_user(ssl_client_socket, data):
         }))
     # If all validation checks pass, call create_user function
     else:
-        print(f"name: {data['name']}, email: {data['email']}, username: {data['username']}, password: {data['password']}")
         result = create_user(
             data["name"],
             data["email"],
@@ -78,6 +92,125 @@ def register_user(ssl_client_socket, data):
             data["key"]
         )
         send_message(ssl_client_socket, json.dumps(result))
+
+# Function to handle adding friends
+def add_user_friend(ssl_client_socket, data, username=None):
+    # If user is not logged in, wait for 0.1 to 1.3 seconds before sending false OK message
+    if not username:
+        randomwait()
+        send_message(ssl_client_socket, json.dumps({
+            "status": "OK",
+            "message": f"{data["friend_username"]} added to friends list if registered and not in list already"
+        }))
+        return
+    elif username == data["friend_username"]:
+        send_message(ssl_client_socket, json.dumps({
+            "status": "ERROR",
+            "message": f"Cannot add self to friends list"
+        }))
+        return
+    else:
+        userdata = load_users()
+        if user_exists(data["friend_username"]):
+            for user in userdata["users"]:
+                if user["username"] == username:
+                    if data["friend_username"] not in user["friends"]:
+                        user["friends"].append(data["friend_username"])
+                    break
+        # Save the updated user data to the JSON file
+        try:
+            save_users(userdata)  # Save the updated data to the file
+            send_message(ssl_client_socket, json.dumps({
+                "status": "OK",
+                "message": f"{data["friend_username"]} added to friends list if registered and not in list already"
+            }))
+        except Exception as e:
+            send_message(ssl_client_socket, json.dumps({
+                "status": "ERROR",
+                "message": f"Failed to add friend: {str(e)}"
+            }))
+
+# Function to handle adding friends
+def remove_user_friend(ssl_client_socket, data, username=None):
+    # If user is not logged in, wait for 0.7 to 1.9 seconds before sending false OK message
+    if not username:
+        randomwait(7, 19)
+        send_message(ssl_client_socket, json.dumps({
+            "status": "OK",
+            "message": f"{data['friend_username']} removed from friends list/was not in friends list"
+        }))
+        return
+    else:
+        userdata = load_users()
+        # Remove friend from user's friend list if they exist, do nothing if not
+        if user_exists(data["friend_username"]):
+            for user in userdata["users"]:
+                if user["username"] == username:
+                    if data["friend_username"] in user["friends"]:
+                        user["friends"].remove(data["friend_username"])
+                    break
+        # Save the updated user data to the JSON file
+        try:
+            save_users(userdata)  # Save the updated data to the file
+            send_message(ssl_client_socket, json.dumps({
+                "status": "OK",
+                "message": f"{data['friend_username']} removed from friends list/was not in friends list"
+            }))
+        except Exception as e:
+            send_message(ssl_client_socket, json.dumps({
+                "status": "ERROR",
+                "message": f"Failed to remove friend: {str(e)}"
+            }))
+
+# Function to show online friends
+def show_online_friends(ssl_client_socket, data, username=None):
+    # If user is not logged in, wait for 0.4 to 2.6 seconds before sending false OK message
+    if not username:
+        randomwait(4, 26)
+        send_message(ssl_client_socket, json.dumps({
+            "status": "OK",
+            "message": f"No Friends Online"
+        }))
+        return
+    else:
+        try:
+            # Get online users
+            friends = get_online_friends(load_users(), username)
+            # If no friends online, notify, else return list of friends
+            if not friends:
+                send_message(ssl_client_socket, json.dumps({
+                    "status": "OK",
+                    "message": f"No Friends Online"
+                }))
+                return
+            else:
+                send_message(ssl_client_socket, json.dumps({
+                    "status": "OK",
+                    "message": "\n\t".join(friends)
+                }))
+                return
+        except Exception as e:
+            send_message(ssl_client_socket, json.dumps({
+                "status": "ERROR",
+                "message": f"Failed to get online friends: {str(e)}"
+            }))
+
+# Get string list of all friends within user's friendlist who are online | returns None if no friends are online
+def get_online_friends(userdata, username):
+    output = []
+    friendlist = []
+    # Get user's friendlist
+    for user in userdata["users"]:
+        if user["username"] == username:
+            friendlist = user["friends"]
+
+    # Go through friendlist, if user is in friend's friendlist and friend is online, add username to list and then send
+    for user in userdata["users"]:
+        if user["username"] in friendlist:
+            if user["online"] and (username in user["friends"]):
+                output.append(user["username"])
+    return None if not output else output
+
 def get_user_key(ssl_client_socket, data):
     print(f"Received request for public key")
     name = data["username"]
@@ -94,9 +227,10 @@ def get_user_key(ssl_client_socket, data):
         except Exception as e:
             print(f"Error retrieving user key")
             send_message(ssl_client_socket, json.dumps({
-            "status": "ERROR",
-            "message": "Error retrieving public key"
-        }))
+                "status": "ERROR",
+                "message": "Error retrieving public key"
+            }))
+
 # Process and save client uploaded files
 def upload_file(ssl_client_socket, data):
     base_dir = './server/files/'
@@ -116,17 +250,16 @@ def upload_file(ssl_client_socket, data):
         with open(filepath, 'w') as f:
             f.write(data)  # Saving the uploaded file to server storage
             send_message(ssl_client_socket, json.dumps({
-            "status": "OK",
-            "message": "Server successfully uploaded file"
-        }))
+                "status": "OK",
+                "message": "Server successfully uploaded file"
+            }))
     except IOError as e:
         print(f"IO Error writing message file {file}: {e}")
     except Exception as e:
         send_message(ssl_client_socket, json.dumps({
             "status": "ERROR",
             "message": "ERROR uploading file"
-            }))
-
+        }))
 
 # Function for user to save a public key to their account
 def save_public_key(user_data):

@@ -72,4 +72,3 @@ def send_file(tls_socket):
         os.system('cls' if os.name == 'nt' else 'clear')  # Clear the screen
     except Exception as e:
          print("Error in /client/encrypt.py")
-         
