@@ -5,7 +5,7 @@ from sconnector import send_message, receive_message
 
 import json 
 from server_utils import create_user # Using utility function
-
+from server_utils import validate_login
 # Program instance main function
 def handle_client(tls_client_socket: ssl.SSLSocket, client_address):
     logging.info(f"Received connection from {client_address}, handling.")
@@ -55,6 +55,19 @@ def handle_client(tls_client_socket: ssl.SSLSocket, client_address):
                     data["password"]
                 )
                 send_message(tls_client_socket, json.dumps(result))
+
+            elif action == "login":
+                required_fields = ["username", "password"]
+                if not all(field in data for field in required_fields):
+                    send_message(tls_client_socket, json.dumps({
+                        "status": "ERROR",
+                        "message": "Missing username or password for login."
+                    }))
+                    return
+
+                result = validate_login(data["username"], data["password"])
+                send_message(tls_client_socket, json.dumps(result))
+
 
             else:
                 send_message(tls_client_socket, json.dumps({
