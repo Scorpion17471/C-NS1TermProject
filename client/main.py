@@ -22,6 +22,20 @@ def send_registration_request(tls_socket, name, email, username, password):
     except Exception as e:
         print(f"Error sending registration data: {e}")
 
+def send_login_request(tls_socket, username, password):
+    """Send the login request with credentials to the server"""
+    login_data = {
+        "action": "login",
+        "username": username,
+        "password": password
+    }
+    try:
+        message = json.dumps(login_data)
+        send_message(tls_socket, message)
+        print(f"Sent login request for {username}")
+    except Exception as e:
+        print(f"Error sending login data: {e}")
+
 def main():
     # Server details
     server_address = '127.0.0.1'  # Replace with the server's address
@@ -49,6 +63,7 @@ def main():
             print(f"Connected to the server using TLS using version {tls_socket_client.version()}.")
             tls_socket_client.settimeout(None) # Reset timeout after connection
 
+
             ### MAIN CLIENT LOOP ###
 
             # Demo Client Send message to server
@@ -60,6 +75,8 @@ def main():
             if response is not None:
                 print(f"Received: {response}")
 
+
+            
             # Client Actions:
                 # Client Requests: Send a message to the server
                     # use client_send function to send data to the server
@@ -78,6 +95,27 @@ def main():
                         #################################################################################
             
             ### MAIN CLIENT LOOP END ###
+             ### USER ACTION SELECTION ###
+            print("\nChoose an option:")
+            print("1. Register")
+            print("2. Login")
+            choice = input("Enter your choice (1 or 2): ").strip()
+
+            if choice == "1":
+                name = input("Enter your full name: ")
+                email = input("Enter your email address: ")
+                username = input("Choose a username: ")
+                password = input("Choose a password: ")
+                send_registration_request(tls_socket_client, name, email, username, password)
+
+            elif choice == "2":
+                username = input("Enter your username: ")
+                password = input("Enter your password: ")
+                send_login_request(tls_socket_client, username, password)
+
+            else:
+                print("Invalid choice.")
+                return
 
                     
              # Collect user registration details
@@ -89,6 +127,7 @@ def main():
             # Send registration request to the server
             send_registration_request(tls_socket_client, name, email, username, password)
 
+            
             # Receive the server response after registration request
             response = receive_message(tls_socket_client)
             if response:
