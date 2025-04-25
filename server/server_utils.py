@@ -4,7 +4,7 @@ import hashlib
 import threading
 import time
 import random
-
+from Crypto.Hash import SHA256
 from sconnector import send_message, receive_message
 
 # Path to the JSON file where user data will be stored
@@ -130,6 +130,36 @@ def login_user(ssl_client_socket, data):
         "status": "ERROR",
         "message": "User does not exist."
     }))
+
+def verify_user_credentials(username, password):
+    try:
+        with open(DATA_FILE, 'r') as f:
+            users = json.load(f)
+
+        if username not in users:
+            return False, "User not found."
+
+        stored_hash = users[username]["password"]
+        input_hash = SHA256.new(password.encode()).hexdigest()
+
+        if input_hash == stored_hash:
+            return True, "Authenticated"
+        else:
+            return False, "Incorrect password."
+    except Exception as e:
+        return False, f"Error verifying credentials: {e}"
+
+def set_user_online(username, status):
+    try:
+        with open(DATA_FILE, 'r+') as f:
+            users = json.load(f)
+            if username in users:
+                users[username]["online"] = status
+                f.seek(0)
+                json.dump(users, f, indent=4)
+                f.truncate()
+    except Exception as e:
+        print(f"Error setting user {username} online status: {e}")
 
 # Function to handle adding friends
 def add_user_friend(ssl_client_socket, data, username=None):
