@@ -10,6 +10,9 @@ from sconnector import send_message, receive_message
 # Path to the JSON file where user data will be stored
 DATA_FILE = "./user_data.json"
 
+# Dictionary to store logged-in users
+logged_in_users = {}
+
 # Function to generate a random wait time between provided seconds in 0.1 second increments default is 0.1 to 1.3 seconds
 def randomwait(lower=1, upper=13):
     time.sleep(random.randrange(lower, upper) / 10.0)  # Simulate some processing time
@@ -43,6 +46,15 @@ def user_exists(username):
     users = load_users()["users"]
     return any(user["username"] == username for user in users)
 
+def authenticate_user(username, password):
+    """Authenticate user based on username and password"""
+    users = load_users()["users"]
+    for user in users:
+        if user["username"] == username:
+            if user["password"] == hash_password(password):
+                return True
+    return False
+
 def create_user(name, email, username, password, key):
     """Create a new user account and store it in the JSON file"""
     if user_exists(username):
@@ -66,6 +78,31 @@ def create_user(name, email, username, password, key):
         return {"status": "OK", "message": "Registration successful"}
     except Exception as e:
         return {"status": "ERROR", "message": f"Failed to create user account: {str(e)}"}
+
+def login_user(ssl_client_socket, data):
+    """Handle user login"""
+    username = data["username"]
+    password = data["password"]
+    
+    if authenticate_user(username, password):
+        # If login is successful, mark the user as logged in and set online status to True
+        logged_in_users[username] = True
+        # Update the user's online status in the user data
+        users_data = load_users()
+        for user in users_data["users"]:
+            if user["username"] == username:
+                user["online"] = True
+                break
+        save_users(users_data)  # Save updated user data
+        send_message(ssl_client_socket, json.dumps({
+            "status": "OK",
+            "message": f"Welcome {username}! You are now logged in."
+        }))
+    else:
+        send_message(ssl_client_socket, json.dumps({
+            "status": "ERROR",
+            "message": "Invalid username or password."
+        }))
 
 # Function takes in SSL socket and data from client, checks if all required fields are present, then calls create_user function to create a new user account.
 def register_user(ssl_client_socket, data):
@@ -92,62 +129,6 @@ def register_user(ssl_client_socket, data):
             data["key"]
         )
         send_message(ssl_client_socket, json.dumps(result))
-
-def login_user(ssl_client_socket, data):
-    required_fields = ["username", "password"]
-    if any(not data.get(field) for field in required_fields):
-        send_message(ssl_client_socket, json.dumps({
-            "status": "ERROR",
-            "message": "Username and password are required."
-        }))
-        return None  # No login handler can be set
-
-    username = data["username"]
-    password = data["password"]
-    hashed_password = hash_password(password)
-
-    users = load_users()["users"]
-
-    for user in users:
-        if user["username"] == username:
-            if user["password"] == hashed_password:
-                user["online"] = True
-                save_users({"users": users})
-                send_message(ssl_client_socket, json.dumps({
-                    "status": "OK",
-                    "message": f"Login successful. Welcome, {username}!"
-                }))
-                return username  # Signal successful login to the server handler
-            break  # Username matched but password didn't
-
-    # Generic message for failed logins (to avoid username enumeration)
-    send_message(ssl_client_socket, json.dumps({
-        "status": "ERROR",
-        "message": "Invalid username or password."
-    }))
-    return None  # Login failed, no session setup
-
-    for user in users:
-        if user["username"] == username:
-            if user["password"] == hashed_password:
-                user["online"] = True
-                save_users({"users": users})
-                send_message(ssl_client_socket, json.dumps({
-                    "status": "OK",
-                    "message": f"Login successful. Welcome, {username}!"
-                }))
-                return
-            else:
-                send_message(ssl_client_socket, json.dumps({
-                    "status": "ERROR",
-                    "message": "Incorrect password."
-                }))
-                return
-
-    send_message(ssl_client_socket, json.dumps({
-        "status": "ERROR",
-        "message": "User does not exist."
-    }))
 
 
 # Function to handle adding friends
