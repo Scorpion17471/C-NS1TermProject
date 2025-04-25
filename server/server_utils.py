@@ -93,6 +93,44 @@ def register_user(ssl_client_socket, data):
         )
         send_message(ssl_client_socket, json.dumps(result))
 
+
+def login_user(ssl_client_socket, data):
+    required_fields = ["username", "password"]
+    if any(not data.get(field) for field in required_fields):
+        send_message(ssl_client_socket, json.dumps({
+            "status": "ERROR",
+            "message": "Username and password are required for login."
+        }))
+        return
+
+    username = data["username"]
+    password = data["password"]
+    hashed_password = hash_password(password)
+
+    users = load_users()["users"]
+
+    for user in users:
+        if user["username"] == username:
+            if user["password"] == hashed_password:
+                user["online"] = True
+                save_users({"users": users})
+                send_message(ssl_client_socket, json.dumps({
+                    "status": "OK",
+                    "message": f"Login successful. Welcome, {username}!"
+                }))
+                return
+            else:
+                send_message(ssl_client_socket, json.dumps({
+                    "status": "ERROR",
+                    "message": "Incorrect password."
+                }))
+                return
+
+    send_message(ssl_client_socket, json.dumps({
+        "status": "ERROR",
+        "message": "User does not exist."
+    }))
+
 # Function to handle adding friends
 def add_user_friend(ssl_client_socket, data, username=None):
     # If user is not logged in, wait for 0.1 to 1.3 seconds before sending false OK message
