@@ -38,20 +38,41 @@ def send_registration_request(tls_socket):
 
 # Send login request to the server || WIP: CURRENTLY SENDS/RECIEVES NOTIFICATION THAT LOGIN IS NOT YET IMPLEMENTED | RETURN TRUE IF LOGIN SUCCESSFUL, FALSE IF FAILED
 def send_login_request(tls_socket):
+    username = input("Enter your username: ")
+    password = input("Enter your password: ")
+
+    # Hash the password using SHA256
+    hasher = SHA256.new()
+    hasher.update(password.encode('utf-8'))
+    hashed_password = hasher.hexdigest()
+
     login_data = {
-        "action": "login"  # Action type
-        #"username": input("Enter your username: "),
-        #"password": input("Enter your password: ")
+        "action": "login",
+        "username": username,
+        "password": hashed_password
     }
 
     try:
-        message = json.dumps(login_data)  # Convert the data into JSON
-        send_message(tls_socket, message)  # Send the login request to the server
-        print(f"Sent login request")
-        response = receive_message(tls_socket, None)  # Wait for the server to respond
-        print(f"Login response: {response}")
+        message = json.dumps(login_data)
+        send_message(tls_socket, message)
+        print("Login request sent.")
+
+        response = receive_message(tls_socket, None)
+        if response is not None:
+            try:
+                data = json.loads(response)
+                if data["status"] == "OK":
+                    print(f"Login successful: {data['message']}")
+                    return True
+                else:
+                    print(f"Login failed: {data['message']}")
+                    return False
+            except json.JSONDecodeError:
+                print("Invalid JSON format in login response.")
+                return False
     except Exception as e:
         print(f"Error sending login data: {e}")
+        return False
 
 # Send exit request to the server
 def send_exit_request(tls_socket):
