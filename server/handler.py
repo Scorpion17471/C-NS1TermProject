@@ -4,7 +4,7 @@ import logging
 import threading
 
 import json 
-from server_utils import register_user, add_user_friend, remove_user_friend, show_online_friends, get_user_key, save_public_key, upload_file
+from server_utils import register_user,login_user, add_user_friend, remove_user_friend, show_online_friends, get_user_key, save_public_key, upload_file
 from sconnector import send_message, receive_message
 
 # Program instance main function
@@ -46,10 +46,7 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
                     data = None  # Clear data after processing
                 # Login existing user ==========================WIP========================== needs to be implemented, set client_username = username on successful login
                 elif action == "login":
-                    send_message(ssl_client_socket, json.dumps({
-                        "status": "OK",
-                        "message": "Login functionality not implemented yet."
-                    }))
+                    login_user(ssl_client_socket, data)
                     data = None  # Clear data after processing
                 # Add friend ==========================WIP========================== needs login to verify username
                 elif action == "add_friend":
