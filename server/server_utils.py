@@ -93,21 +93,39 @@ def register_user(ssl_client_socket, data):
         )
         send_message(ssl_client_socket, json.dumps(result))
 
-
 def login_user(ssl_client_socket, data):
     required_fields = ["username", "password"]
     if any(not data.get(field) for field in required_fields):
         send_message(ssl_client_socket, json.dumps({
             "status": "ERROR",
-            "message": "Username and password are required for login."
+            "message": "Username and password are required."
         }))
-        return
+        return None  # No login handler can be set
 
     username = data["username"]
     password = data["password"]
     hashed_password = hash_password(password)
 
     users = load_users()["users"]
+
+    for user in users:
+        if user["username"] == username:
+            if user["password"] == hashed_password:
+                user["online"] = True
+                save_users({"users": users})
+                send_message(ssl_client_socket, json.dumps({
+                    "status": "OK",
+                    "message": f"Login successful. Welcome, {username}!"
+                }))
+                return username  # Signal successful login to the server handler
+            break  # Username matched but password didn't
+
+    # Generic message for failed logins (to avoid username enumeration)
+    send_message(ssl_client_socket, json.dumps({
+        "status": "ERROR",
+        "message": "Invalid username or password."
+    }))
+    return None  # Login failed, no session setup
 
     for user in users:
         if user["username"] == username:
@@ -131,35 +149,6 @@ def login_user(ssl_client_socket, data):
         "message": "User does not exist."
     }))
 
-def verify_user_credentials(username, password):
-    try:
-        with open(DATA_FILE, 'r') as f:
-            users = json.load(f)
-
-        if username not in users:
-            return False, "User not found."
-
-        stored_hash = users[username]["password"]
-        input_hash = SHA256.new(password.encode()).hexdigest()
-
-        if input_hash == stored_hash:
-            return True, "Authenticated"
-        else:
-            return False, "Incorrect password."
-    except Exception as e:
-        return False, f"Error verifying credentials: {e}"
-
-def set_user_online(username, status):
-    try:
-        with open(DATA_FILE, 'r+') as f:
-            users = json.load(f)
-            if username in users:
-                users[username]["online"] = status
-                f.seek(0)
-                json.dump(users, f, indent=4)
-                f.truncate()
-    except Exception as e:
-        print(f"Error setting user {username} online status: {e}")
 
 # Function to handle adding friends
 def add_user_friend(ssl_client_socket, data, username=None):
