@@ -4,7 +4,7 @@ import logging
 import threading
 
 import json 
-from server_utils import register_user,login_user, add_user_friend, remove_user_friend, show_online_friends, get_user_key, save_public_key, upload_file, verify_user_credentials, set_user_online
+from server_utils import register_user, login_user, add_user_friend, remove_user_friend, show_online_friends, get_user_key, save_public_key, upload_file, logout_user
 from sconnector import send_message, receive_message
 
 # Program instance main function
@@ -44,21 +44,19 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
                 if action == "register":
                     register_user(ssl_client_socket, data)  # Call the register_user function from server_utils.py
                     data = None  # Clear data after processing
-                # Login existing user ==========================WIP========================== needs to be implemented, set client_username = username on successful login
+                # Login existing user (DONE)
                 elif action == "login":
-                    username = data.get("username")
-                    password = data.get("password")
-                    result = login_user(username, password, self.request, self)
-                    self.send_message(json.dumps(result))
-
+                    client_username = login_user(ssl_client_socket, data)
+                    data = None # Clear data after processing
+                # Add friend (DONE)
                 elif action == "add_friend":
                     add_user_friend(ssl_client_socket, data, client_username)  # Call the add_friend function from server_utils.py
                     data = None  # Clear data after processing
-                # Remove friend ==========================WIP========================== needs login to verify username
+                # Remove friend (DONE)
                 elif action == "remove_friend":
                     remove_user_friend(ssl_client_socket, data, client_username)
                     data = None  # Clear data after processing
-                # Show online friends ==========================WIP========================== needs login to verify username
+                # Show online friends (DONE)
                 elif action == "show_online":
                     show_online_friends(ssl_client_socket, data, client_username)  # Call the show_online function from server_utils.py
                     data = None  # Clear data after processing
@@ -70,14 +68,9 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
                 elif action == "send_dm":
                     #send_dm(ssl_client_socket, data, client_username)  # Call the send_dm function from server_utils.py
                     data = None  # Clear data after processing
-                # Logout/Exit ==========================WIP========================== needs to be implemented
+                # Logout (DONE)
                 elif action == "logout":
-                    send_message(ssl_client_socket, json.dumps({
-                        "status": "OK",
-                        "message": "Logout functionality not implemented yet."
-                    }))
-                    #set_offline(client_username)  # Call the set_offline function from server_utils.py
-                    client_username = None  # Clear client_username after logout
+                    client_username = logout_user(ssl_client_socket, data, client_username) # Sets client_username to None on successful logout and sends message to user, keeps user logged in and sends message if failed
                     data = None
                 elif action == "exit":
                     send_message(ssl_client_socket, json.dumps({

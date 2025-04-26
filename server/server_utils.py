@@ -137,7 +137,7 @@ def login_user(ssl_client_socket, data):
             "message": "Login successful."
         }))
 
-        return username  # Return username for handler to set client_username
+        return user["username"]  # Return username for handler to set client_username
 
     except Exception as e:
         send_message(ssl_client_socket, json.dumps({
@@ -337,3 +337,25 @@ def save_public_key(user_data):
     except Exception as e:
         print(f"Error saving updated record: '{e}")
 
+def logout_user(ssl_client_socket, data, client_username=None):
+    try:
+        users = load_users()["users"]
+        user = next((u for u in users if u["username"] == client_username), None)
+
+        # Set user as online
+        user["online"] = False
+        save_users({"users": users})  # Save updated user list
+
+        send_message(ssl_client_socket, json.dumps({
+            "status": "OK",
+            "message": "Logout successful."
+        }))
+
+        return None  # Clear out client_username from session
+
+    except Exception as e:
+        send_message(ssl_client_socket, json.dumps({
+            "status": "ERROR",
+            "message": f"Logout failed: {str(e)}"
+        }))
+        return client_username # Keep user logged in
