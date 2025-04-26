@@ -214,5 +214,29 @@ def show_online(tls_socket_client):
     except Exception as e:
         print(f"Error sending request for online friends data: {e}")
 
+def send_logout_request(tls_socket_client):
+    list_request = {
+        "action": "logout"
+    }
+    try:
+        message = json.dumps(list_request)  # Convert the data into JSON
+        send_message(tls_socket_client, message)  # Send the remove friend request to the server
+        response = receive_message(tls_socket_client, None)  # Wait for the server to respond
+        if response is not None:
+            try:
+                data = json.loads(response)  # Parse incoming JSON message
+            except json.JSONDecodeError:
+                print("Invalid JSON format in response, please try again.")
+                return
+            # Print server response
+            if data["status"] == "ERROR":
+                print(f"\nFailed to logout: {data["message"]}")
+                return True # User is still logged in
+            elif data["status"] == "OK":
+                print(f"You have been logged out\n")
+                return False # User is logged out
+    except Exception as e:
+        print(f"Error sending logout request: {e}")
+        return True # User is still logged in
 #send_file(tls_socket_client)
 #send_DM(tls_socket_client)
