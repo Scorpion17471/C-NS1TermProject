@@ -3,6 +3,7 @@ Secure File Transfer application with login based access.
 
 # Server
 Run the server using ```python main.py``` from within the server folder
+
 It will run indefinitely unless given a KeyboardInterrupt (CTRL + C is default for VSCode)
 
 To generate certificates for the server, run: ```openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365```
