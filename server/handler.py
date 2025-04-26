@@ -4,7 +4,7 @@ import logging
 import threading
 
 import json 
-from server_utils import register_user, add_user_friend, remove_user_friend, show_online_friends, get_user_key, save_public_key, upload_file, verify_user_credentials, set_user_online
+from server_utils import register_user,login_user, add_user_friend, remove_user_friend, show_online_friends, get_user_key, save_public_key, upload_file, verify_user_credentials, set_user_online
 from sconnector import send_message, receive_message
 
 # Program instance main function
@@ -48,21 +48,8 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
                 elif action == "login":
                     username = data.get("username")
                     password = data.get("password")
-
-                    success, message = verify_user_credentials(username, password)
-                    if success:
-                        set_user_online(username, True)
-                        client_username = username  # Store for session
-                        send_message(ssl_client_socket, json.dumps({
-                            "status": "OK",
-                            "message": "Login successful."
-                        }))
-                    else:
-                        send_message(ssl_client_socket, json.dumps({
-                            "status": "ERROR",
-                            "message": message
-                        }))
-                    data = None
+                    result = login_user(username, password, self.request, self)
+                    self.send_message(json.dumps(result))
 
                 elif action == "add_friend":
                     add_user_friend(ssl_client_socket, data, client_username)  # Call the add_friend function from server_utils.py
