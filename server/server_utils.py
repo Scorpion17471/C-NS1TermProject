@@ -97,21 +97,54 @@ def register_user(ssl_client_socket, data):
         send_message(ssl_client_socket, json.dumps(result))
         
 #Function checks if the user exists by searching for their username. If found, it compares the password hash with the stored hash. If both match, the login is successful.
-def login_user(username, password):
-    """Verify user credentials (username and password)"""
-    users = load_users()["users"]
-    
-    # Find user with the given username
-    user = next((user for user in users if user["username"] == username), None)
-    
-    if not user:
-        return {"status": "ERROR", "message": "Username not found."}
-    
-    # Compare hashed password
-    if user["password"] != hash_password(password):
-        return {"status": "ERROR", "message": "Incorrect password."}
-    
-    return {"status": "OK", "message": "Login successful."}
+def login_user(ssl_client_socket, data):
+    """Handles login logic, sets online flag, and returns username on success"""
+    try:
+        username = data.get("username")
+        password = data.get("password")
+
+        if not username or not password:
+            send_message(ssl_client_socket, json.dumps({
+                "status": "ERROR",
+                "message": "Username and password are required."
+            }))
+            return None
+
+        users = load_users()["users"]
+        user = next((u for u in users if u["username"] == username), None)
+
+        if not user:
+            send_message(ssl_client_socket, json.dumps({
+                "status": "ERROR",
+                "message": "Invalid username or password."
+            }))
+            return None
+
+        # Compare server-side hashed password
+        if user["password"] != hash_password(password):
+            send_message(ssl_client_socket, json.dumps({
+                "status": "ERROR",
+                "message": "Invalid username or password."
+            }))
+            return None
+
+        # Set user as online
+        user["online"] = True
+        save_users({"users": users})  # Save updated user list
+
+        send_message(ssl_client_socket, json.dumps({
+            "status": "OK",
+            "message": "Login successful."
+        }))
+
+        return username  # Return username for handler to set client_username
+
+    except Exception as e:
+        send_message(ssl_client_socket, json.dumps({
+            "status": "ERROR",
+            "message": f"Login failed: {str(e)}"
+        }))
+        return None
 
 # Function to handle adding friends
 def add_user_friend(ssl_client_socket, data, username=None):
