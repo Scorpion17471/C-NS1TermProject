@@ -38,37 +38,29 @@ def send_registration_request(tls_socket):
 
 # Send login request to the server || WIP: CURRENTLY SENDS/RECIEVES NOTIFICATION THAT LOGIN IS NOT YET IMPLEMENTED | RETURN TRUE IF LOGIN SUCCESSFUL, FALSE IF FAILED
 def send_login_request(tls_socket):
-    username = input("Enter your username: ")
-    password = input("Enter your password: ")
-
-    # Hash the password using SHA256
-    hasher = SHA256.new()
-    hasher.update(password.encode('utf-8'))
-    hashed_password = hasher.hexdigest()
-
     login_data = {
         "action": "login",
-        "username": username,
-        "password": hashed_password
+        "username": input("Enter your username: "),
+        "password": input("Enter your password: ")
     }
 
     try:
         message = json.dumps(login_data)
         send_message(tls_socket, message)
-        print("Login request sent.")
-
         response = receive_message(tls_socket, None)
+
         if response is not None:
             try:
                 data = json.loads(response)
-                if data["status"] == "OK":
-                    print(f"Login successful: {data['message']}")
-                    return True
-                else:
-                    print(f"Login failed: {data['message']}")
-                    return False
             except json.JSONDecodeError:
-                print("Invalid JSON format in login response.")
+                print("Invalid JSON format in response, please try again.")
+                return False
+
+            if data["status"] == "OK":
+                print(f"\n{data['message']}")
+                return True
+            elif data["status"] == "ERROR":
+                print(f"\nLogin failed: {data['message']}")
                 return False
     except Exception as e:
         print(f"Error sending login data: {e}")
