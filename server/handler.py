@@ -49,10 +49,18 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
                     username = data.get("username")
                     password = data.get("password")
 
-                    success, message = verify_user_credentials(username, password)
-                    if success:
-                        set_user_online(username, True)
-                        client_username = username  # Store for session
+                    if not username or not password:
+                        send_message(ssl_client_socket, json.dumps({
+                            "status": "ERROR",
+                            "message": "Username and password are required for login."
+                        }))
+                        continue
+
+                    login_result = verify_user_credentials(username, password)
+
+                    if login_result.get("status") == "OK":
+                        set_user_online(username)
+                        client_username = username  # Set the username in session
                         send_message(ssl_client_socket, json.dumps({
                             "status": "OK",
                             "message": "Login successful."
@@ -60,9 +68,8 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
                     else:
                         send_message(ssl_client_socket, json.dumps({
                             "status": "ERROR",
-                            "message": message
+                            "message": "Invalid username or password."
                         }))
-                    data = None
 
                 elif action == "add_friend":
                     add_user_friend(ssl_client_socket, data, client_username)  # Call the add_friend function from server_utils.py
