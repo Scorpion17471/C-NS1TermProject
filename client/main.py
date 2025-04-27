@@ -6,7 +6,7 @@ from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 
 from keylogic import generate_key_pair, get_private, get_public
-from menuoptions import menu1, menu2, send_registration_request, send_login_request, send_exit_request, add_friend, remove_friend, show_online, send_logout_request#, send_DM
+from menuoptions import menu1, menu2, send_registration_request, send_login_request, send_logout_request, send_exit_request, add_friend, remove_friend, show_online,send_file,download_file
 #from encrypt import send_file
 import json
 
@@ -72,9 +72,11 @@ def main():
                         show_online(tls_socket_client)
 
                     # Send file ===============WIP===============
-                    #elif option == 4:
-                        #send_file(tls_socket_client)
+                    elif option == 4:
+                        send_file(tls_socket_client)
 
+                    elif option == 5:
+                        download_file(tls_socket_client)
                     # Send DM ===============WIP===============
                     #elif option == 5:
                         #send_message(tls_socket_client)

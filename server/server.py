@@ -55,6 +55,7 @@ def run_server(host: str, port: int, cert_file: str, key_file: str):
                     #-----Accept connection to client
                     server_socket.settimeout(5)  # Set a 5s timeout for accepting connections so server doesn't hang forever when KeyboardInterrupt is sent
                     client_socket, client_address = server_socket.accept()
+                    print(f"Accepted connection from: {client_address}")
                     logging.info(f"Accepted connection from: {client_address}")
 
                     # 4. Try to wrap socket with SSL

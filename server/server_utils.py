@@ -8,7 +8,9 @@ from Crypto.Hash import SHA256
 from sconnector import send_message, receive_message
 
 # Path to the JSON file where user data will be stored
-DATA_FILE = "./user_data.json"
+#file_dir = os.path.dirname(os.path.abspath(__file__))
+#DATA_FILE = os.path.join(file_dir, "user_data.json")
+DATA_FILE = "./server/user_data.json"
 
 # Function to generate a random wait time between provided seconds in 0.1 second increments default is 0.1 to 1.3 seconds
 def randomwait(lower=1, upper=13):
@@ -264,32 +266,65 @@ def get_online_friends(userdata, username):
                 output.append(user["username"])
     return None if not output else output
 
-def get_user_key(ssl_client_socket, data):
+def get_user_key(ssl_client_socket, client_username, data):
+    friendlist = []
+    recipient_found = 0
+    friends = False
     print(f"Received request for public key")
-    name = data["username"]
-    print(f"username to find: '{name}'")
-    with open(DATA_FILE, 'r') as keystore:     # Open JSON file of accounts
-        try:
-            user_data = json.load(keystore)
-            user_list = user_data.get("users")  # Iterate through "users"
-            if isinstance(user_list, list):
-                for user in user_list:
-                    if isinstance(user, dict) and user.get("username") == name: #find matching user, copy and send public key 
-                        public_key = user.get("key")
-                        send_message(ssl_client_socket, json.dumps({"key": public_key}))
-        except Exception as e:
-            print(f"Error retrieving user key")
+    recipient = data["username"]
+    userdata = load_users()
+    print(f"username to find: '{recipient}'\n looking in {DATA_FILE}")
+
+    # Check if recipient and the requesting are friends
+    for user_data in userdata["users"]:
+        if user_data["username"] == recipient:
+            friendlist = user_data["friends"]
+            recipient_found = 1
+            print(f"Found recipient {recipient}. Friends list: {friendlist}")
+            break
+    if not recipient_found:
+        print(f"Not able to find {recipient}")
+        return
+    else:
+        if friendlist is None:
+         print(f"Recipient {recipient} has no friend list data.")
+        elif not friendlist: # Handles the case where friendlist is an empty list []
+            print(f"{recipient} has no friends.")
             send_message(ssl_client_socket, json.dumps({
-                "status": "ERROR",
-                "message": "Error retrieving public key"
-            }))
+            "status": "ERROR",
+            "message": "You are not friends with {recipient}"
+        }))
+        # Loop 2: Check if client is in obtained friendlist
+        for friend_username in friendlist: 
+            if friend_username == client_username:
+                friends = True
+                print(f"Confirmed: {client_username} is in {recipient}'s friend list.") # Debug print
+                try:
+                    user_list = userdata.get("users")  # Iterate through "users"
+                    if isinstance(user_list, list):
+                        for user in user_list:
+                            if isinstance(user, dict) and user.get("username") == recipient: #find matching user, copy and send public key 
+                                public_key = user.get("key")
+                                print(f"User key: {public_key}\n\n")
+                                send_message(ssl_client_socket, json.dumps({"key": public_key}))
+                except Exception as e:
+                    print(f"Error retrieving user key")
+                    send_message(ssl_client_socket, json.dumps({
+                        "status": "ERROR",
+                        "message": "Error retrieving public key"
+                    }))
+                break # Exit loop once friend is found
+            else:
+                send_message(ssl_client_socket, json.dumps({
+                    "status": "ERROR",
+                    "message": "You are not friends with {recipient}"
+                }))
 
 # Process and save client uploaded files
 def upload_file(ssl_client_socket, data):
+    print("upload_file function called")
     base_dir = './server/files/'
     os.makedirs(base_dir, exist_ok=1) # Ensure directory is available to store client files
-    print("Server converted to JSON, JSON file: \n\n")
-    print(data)
     # Get file name
     file = data["file"]
     file_name = file+".json"
@@ -315,27 +350,39 @@ def upload_file(ssl_client_socket, data):
         }))
 
 # Function for user to save a public key to their account
-def save_public_key(user_data):
-    name = user_data["name"]
+def save_public_key(client_username, user_data):
     key = user_data["key"]
-    data = []
-    # Find user and write key to file
-    print(f"Storing public key to record")
+        # 1. Load current data using the robust load function
+    all_data = load_users() # load_users already handles locking for read
+    # load_users returns {"users": []} on error, check if it's usable
+    if not isinstance(all_data.get("users"), list):
+            print("Error: Failed to load a valid user data structure.")
+            return False
+
+    user_found = False
+    # 2. Find the user and update the key 
+    for user_record in all_data["users"]:
+        if isinstance(user_record, dict) and user_record.get("username") == client_username:
+            print(f"Found user '{client_username}'. Updating key.")
+            user_record["key"] = key # Update the 'key' field
+            user_found = True
+            break 
+
+    if not user_found:
+        print(f"Error: User '{client_username}' not found in data file.")
+        return False
+
+    # 3. Write the data back to the file
     try:
-        with open(DATA_FILE, "r+") as jsonfileR:
-            data = json.load(jsonfileR)
-            for user in data:
-                if isinstance(user, dict) and user.get("name") == name:
-                    user["key"] = key
-                    break
-    except Exception as e:
-        print(f"Error opening record: '{e}'")
-    try:
-        with open(DATA_FILE, "w") as jsonfileW:
-            json.dump(data, jsonfileW, indent=3)
-            print(f"Public key processed for '{name}")
-    except Exception as e:
-        print(f"Error saving updated record: '{e}")
+        with open(DATA_FILE, "w", encoding='utf-8') as jsonfileW:
+            json.dump(all_data, jsonfileW, indent=4) 
+        print(f"Successfully updated public key for '{client_username}' in {DATA_FILE}")
+        return True
+    except IOError as e:
+        print(f"ERROR saving updated record to {DATA_FILE}: {e}")
+        return False 
+    except Exception as e: 
+        print(f"An unexpected error occurred saving the updated record: {e}")
 
 def logout_user(ssl_client_socket, data, client_username=None):
     try:
@@ -359,3 +406,53 @@ def logout_user(ssl_client_socket, data, client_username=None):
             "message": f"Logout failed: {str(e)}"
         }))
         return client_username # Keep user logged in
+def get_and_send_file(ssl_client_socket, client_username):
+    folder_path = './server/files/'
+    matching_files = ''
+    print(client_username)
+    # --- 1. Validate Folder Path ---
+    if not os.path.isdir(folder_path):
+        print(f"Error: Folder not found or is not a directory: {folder_path}")
+        return matching_files # Return empty list
+    try:
+        # Iterate through folder, check if json, then find match to username
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+            if os.path.isfile(file_path) and filename.lower().endswith('.json'):
+                print(f"  Checking file: {filename}") 
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f: # Use 'with' for auto-close
+                        data = json.load(f)
+                        if isinstance(data, dict):
+                            # Check if the 'recipient' key exists
+                            if "recipient" in data:
+                                file_recipient = data["recipient"]
+                                if file_recipient == client_username:
+                                        match = True
+                                if match:
+                                    print(f"--> Match found!")
+                                    matching_files = (file_path) 
+                                    break
+
+                # Handle potential errors during file reading/parsing
+                except json.JSONDecodeError:
+                    print(f"    Warning: Could not decode JSON from file: {filename}")
+                except IOError as e:
+                    print(f"    Warning: Could not read file: {filename} - {e}")
+                except Exception as e: # Catch any other unexpected errors for this file
+                    print(f"    Warning: An unexpected error occurred processing file {filename}: {e}")
+
+    except OSError as e:
+        # Handle potential errors listing the directory (e.g., permissions)
+        print(f"Error: Could not access directory contents: {folder_path} - {e}")
+        return [] # Return empty list
+    try:
+        with open(file_path, 'r') as encrypted_file:
+            file_data = json.load(encrypted_file)
+            print(f"Successfully loaded file: {filename}")
+    except Exception as e:
+        print(f"There was an error retrieving the file: {e}")
+    send_message(ssl_client_socket, json.dumps({
+        "status" : "OK",
+        "message" : file_data
+    }))
