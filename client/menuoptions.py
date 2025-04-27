@@ -6,6 +6,39 @@ import os
 from Crypto.Hash import SHA256
 from cconnector import send_message, receive_message
 from keylogic import generate_key_pair, get_publics
+from encrypt import encrypt_file, decrypt_file
+
+# Display initial options to the user
+def menu1():
+    option = 0
+    while option not in [1, 2, 3]:
+        try:
+            option = int(input("""Welcome to SFTP v1.0! Please register if this is your first time connecting, or login if you already have an account:
+                1. Register
+                2. Login
+                3. Exit
+            """))
+        except ValueError:
+            print("Invalid input. Please enter a number between 1 and 3.")
+    return option
+
+# Display session menu options to the user
+def menu2():
+    option = 0
+    while option not in [1, 2, 3, 4, 5, 6]:
+        try:
+            option = int(input("""Welcome to SFTP v1.0! Please register if this is your first time connecting, or login if you already have an account:
+                1. Add Friend
+                2. Remove Friend
+                3. Show Friends Online
+                4. Send File
+                5. Download File
+                6. Send DM
+                7. Logout
+            """))
+        except ValueError:
+            print("Invalid input. Please enter a number between 1 and 6.")
+    return option
 
 # Send registration request to the server
 def send_registration_request(tls_socket):
@@ -58,6 +91,7 @@ def send_login_request(tls_socket):
 
             if data["status"] == "OK":
                 print(f"\n{data['message']}")
+                send_public_key(tls_socket)
                 return True
             elif data["status"] == "ERROR":
                 print(f"\nLogin failed: {data['message']}")
@@ -80,29 +114,14 @@ def send_exit_request(tls_socket):
         except json.JSONDecodeError:
             print("Invalid JSON format in response, please try again.")
             return
+        send_public_key(tls_socket)
     except Exception as e:
         print(f"Error sending exit data: {e}")
 
-def send_public_key(tls_socket):
-    try:
-        with open('./client_account.json', 'r+') as jsonfile:
-            data = json.load(jsonfile)
-            if isinstance(data, dict) and 'name' in data:
-                name = data["name"]
-                print(name)
-    except Exception as e:
-        print(f"Error opening gathering account information: '{e}'")
-    public_key = './keys/public.pem'
-    try:
-        with open(public_key, 'r+') as key_file:
-            key_data = key_file.read()
-    except Exception as e:
-        print(f"Error opening public key file: '{e}'")
-    print(f"Public key: '{key_data}")
+def send_public_key(tls_socket): # Get the public key as string from the file
     data = {
         "action": "storepk",
-        "name": name, 
-        "key": key_data
+        "key": get_publics()
     }
     message = json.dumps(data)
     try:
@@ -110,36 +129,6 @@ def send_public_key(tls_socket):
     except Exception as e:
         print(f"Error sending public key: {e}")
     
-# Display initial options to the user
-def menu1():
-    option = 0
-    while option not in [1, 2, 3]:
-        try:
-            option = int(input("""Welcome to SFTP v1.0! Please register if this is your first time connecting, or login if you already have an account:
-                1. Register
-                2. Login
-                3. Exit
-            """))
-        except ValueError:
-            print("Invalid input. Please enter a number between 1 and 3.")
-    return option
-
-# Display session menu options to the user
-def menu2():
-    option = 0
-    while option not in [1, 2, 3, 4, 5, 6]:
-        try:
-            option = int(input("""Welcome to SFTP v1.0! Please register if this is your first time connecting, or login if you already have an account:
-                1. Add Friend
-                2. Remove Friend
-                3. Show Friends Online
-                4. Send File
-                5. Send DM
-                6. Logout
-            """))
-        except ValueError:
-            print("Invalid input. Please enter a number between 1 and 6.")
-    return option
 
 # Send add friend request to the server
 def add_friend(tls_socket_client):
@@ -213,6 +202,90 @@ def show_online(tls_socket_client):
                 print(f"Friends Online:\n\n\t{data["message"]}\n")
     except Exception as e:
         print(f"Error sending request for online friends data: {e}")
+
+def send_file(tls_socket_client):
+
+    # Prompt user for file to upload
+    file_name = input("Enter the path/name of the file you want to send: ")
+    file_path = "./client/"+file_name
+    if not file_path:
+        print("Error: No filename provided.")
+        return
+
+    if not os.path.exists(file_path):
+        print(f"Error: File not found at '{file_path}'")
+        return
+
+    print(f"Reading file: {file_name}...")
+    with open(file_path, 'rb') as f:
+        file_bytes = f.read()
+
+    if not file_bytes:
+        print(f"Warning: File '{file_name}' is empty.")
+
+    payload = encrypt_file(tls_socket_client, file_bytes, file_name)
+    if not payload:
+        os.system('cls' if os.name == 'nt' else 'clear') 
+        print(f"Error encrypting file")
+        return
+    message = json.dumps(payload)
+    try:
+        print("sending encrypted file...")
+        send_message(tls_socket_client, message)
+        response = receive_message(tls_socket_client, None)
+        if response is not None:
+            print(f"Response {response}")
+            try:
+                data = json.loads(response)  # Parse incoming JSON message
+            except json.JSONDecodeError:
+                print("Invalid JSON format in response, please try again.")
+                return
+            # Print server response
+            if data["status"] == "ERROR":
+                print(f"\Send failed: {data["message"]}")
+            elif data["status"] == "OK":
+                print(f"\n{data["message"]}")
+                # Save account details, send server public key
+            # Return to client menu
+            input("Returning to menu, press Enter to continue...")
+        else:
+            print(f"Response {response}")
+            return
+        os.system('cls' if os.name == 'nt' else 'clear')  # Clear the screen
+    except Exception as e:
+         print("Error in /client/encrypt.py")
+
+def download_file(tls_socket_client):
+    # Send server check check message
+    # Server verifies
+    # User selects file (if multiple) & downloads
+    senddata = {
+        "action": "download"
+    }
+    message = json.dumps(senddata)
+    try:
+        send_message(tls_socket_client, message)
+        response = receive_message(tls_socket_client, None)
+        print(f"Server response: {response}")
+        payload = json.loads(response)
+        print(f"Type of payload {type(payload)} ")
+        if payload["status"] == "ERROR":
+            print("Server experienced issues retrieving data")
+    except Exception as e:
+        print(f"Error sending/receiving message: {e}")
+
+    decrypted_data = decrypt_file(tls_socket_client, payload["message"])
+    filename = payload["message"]["file"]
+    save_file = f"decrypted_{filename}"
+    try:
+        with open(save_file, "wb") as f:
+            f.write(decrypted_data)
+        print("File saved")
+    except KeyError as e:
+        print(f"ERROR: Missing expected key in received payload: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred during decryption: {e}")
+
 
 def send_logout_request(tls_socket_client):
     list_request = {

@@ -4,6 +4,7 @@ import logging
 import threading
 
 import json 
+from server_utils import *
 from server_utils import register_user, login_user, add_user_friend, remove_user_friend, show_online_friends, get_user_key, save_public_key, upload_file, logout_user
 from sconnector import send_message, receive_message
 
@@ -62,9 +63,12 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
                     data = None  # Clear data after processing
                 # Send file ==========================WIP========================== needs to be implemented
                 elif action == "send_file":
-                    #send_file(ssl_client_socket, data, client_username)  # Call the send_file function from
+                    upload_file(ssl_client_socket, data, client_username)  # Call the send_file function from
                     data = None  # Clear data after processing
                 # Send DM ==========================WIP========================== needs to be implemented
+                elif action == "download":
+                    get_and_send_file(ssl_client_socket,client_username)
+                    data = None
                 elif action == "send_dm":
                     #send_dm(ssl_client_socket, data, client_username)  # Call the send_dm function from server_utils.py
                     data = None  # Clear data after processing
@@ -79,9 +83,9 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
                     }))
                     break
                 elif action == "storepk": #Save public key to share with other clients
-                    save_public_key(data)
+                    save_public_key(client_username, data)
                 elif action == "getpk":
-                    get_user_key(ssl_client_socket, data) 
+                    get_user_key(ssl_client_socket,client_username, data) 
                 elif action == "upload":
                     upload_file(ssl_client_socket, data)
                 else:
