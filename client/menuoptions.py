@@ -33,8 +33,7 @@ def menu2():
                 3. Show Friends Online
                 4. Send File
                 5. Download File
-                6. Send DM
-                7. Logout
+                6. Logout
             """))
         except ValueError:
             print("Invalid input. Please enter a number between 1 and 6.")
@@ -242,7 +241,7 @@ def send_file(tls_socket_client):
                 return
             # Print server response
             if data["status"] == "ERROR":
-                print(f"\Send failed: {data["message"]}")
+                print(f"\nSend failed: {data["message"]}")
             elif data["status"] == "OK":
                 print(f"\n{data["message"]}")
                 # Save account details, send server public key
@@ -311,5 +310,3 @@ def send_logout_request(tls_socket_client):
     except Exception as e:
         print(f"Error sending logout request: {e}")
         return True # User is still logged in
-#send_file(tls_socket_client)
-#send_DM(tls_socket_client)
