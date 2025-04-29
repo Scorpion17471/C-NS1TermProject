@@ -36,8 +36,7 @@ def receive_message(ssl_client_socket, timeout=5):
         output = output[4:-4]  # Remove the delimiters from the end of the output
     
     except socket.timeout:
-        logging.warning(f"Timeout after 5 seconds")
-        return None
+        output = None
     except socket.error as e:
         output = None
         logging.error(f"Error receiving response: {e}")
