@@ -206,7 +206,13 @@ def send_file(tls_socket_client):
 
     # Prompt user for file to upload
     file_name = input("Enter the path/name of the file you want to send: ")
-    file_path = "./client/"+file_name
+    
+    # Use the file_name directly if it includes a directory; otherwise, prepend "./client/"
+    if os.path.isabs(file_name) or os.path.dirname(file_name):
+        file_path = file_name  # Use the provided path as-is
+    else:
+        file_path = "./client/" + file_name  # Prepend "./client/" for relative paths
+    
     if not file_path:
         print("Error: No filename provided.")
         return
