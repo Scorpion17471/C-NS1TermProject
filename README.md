@@ -1,6 +1,13 @@
 # C-NS1TermProject
 Secure File Transfer application with login based access.
 
+# Virtual Environment
+To create an environment to run the program, use ```python3 -m venv .venv```
+
+To launch the environment run ```source .venv/bin/activate``` for Unix/Max or ```.venv/bin/activate``` in PowerShell for Windows
+
+From there, you can use the provided "requirements.txt" file to install dependencies using the command ```python -m pip install -r requirements.txt```
+
 # Server
 Run the server using ```python main.py``` from within the server folder
 
@@ -20,6 +27,5 @@ With the server active, run the client program from within the client folder usi
   - Add Friend
   - Remove Friend
   - Show Online Friends
-  - Send DM (WIP)
-  - Send File (WIP)
+  - Send File
   - Logout
