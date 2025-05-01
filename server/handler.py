@@ -26,6 +26,7 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
     # Client Instance Main Loop
     try:
         client_username = None
+        suspicious_counter = 0
         while True:
             # Receive message from client
             request = receive_message(ssl_client_socket)
@@ -52,26 +53,86 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
                 # Add friend (DONE)
                 elif action == "add_friend":
                     add_user_friend(ssl_client_socket, data, client_username)  # Call the add_friend function from server_utils.py
+                    
+                    result = add_user_friend(ssl_client_socket, data, client_username)
+                    if result == {"suspicious": 1}:
+                        suspicious_counter += 1
+                    if suspicious_counter >= 3:
+                        send_message(ssl_client_socket, json.dumps({
+                            "status": "ERROR",
+                            "message": "Too many suspicious actions. Connection will be closed."
+                        }))
+                        break
+
                     data = None  # Clear data after processing
+
                 # Remove friend (DONE)
                 elif action == "remove_friend":
                     remove_user_friend(ssl_client_socket, data, client_username)
+                    
+                    result = remove_user_friend(ssl_client_socket, data, client_username)
+                    if result == {"suspicious": 1}:
+                        suspicious_counter += 1
+                    if suspicious_counter >= 3:
+                        send_message(ssl_client_socket, json.dumps({
+                            "status": "ERROR",
+                            "message": "Too many suspicious actions. Connection will be closed."
+                        }))
+                        break
+
                     data = None  # Clear data after processing
+                    
                 # Show online friends (DONE)
                 elif action == "show_online":
                     show_online_friends(ssl_client_socket, data, client_username)  # Call the show_online function from server_utils.py
+                    
+                    result = show_online_friends(ssl_client_socket, data, client_username)
+                    if result == {"suspicious": 1}:
+                        suspicious_counter += 1
+                    if suspicious_counter >= 3:
+                        send_message(ssl_client_socket, json.dumps({
+                            "status": "ERROR",
+                            "message": "Too many suspicious actions. Connection will be closed."
+                        }))
+                        break                    
+                    
                     data = None  # Clear data after processing
+                    
                 # Send file (DONE)
                 elif action == "send_file":
                     upload_file(ssl_client_socket, data, client_username)  # Call the send_file function from
+                    
+                    result = upload_file(ssl_client_socket, data, client_username)
+                    if result == {"suspicious": 1}:
+                        suspicious_counter += 1
+                    if suspicious_counter >= 3:
+                        send_message(ssl_client_socket, json.dumps({
+                            "status": "ERROR",
+                            "message": "Too many suspicious actions. Connection will be closed."
+                        }))
+                        break                    
                     data = None  # Clear data after processing
+
                 # Get file (DONE)
                 elif action == "download":
                     get_and_send_file(ssl_client_socket,client_username)
                     data = None
+
                 # Logout (DONE)
                 elif action == "logout":
                     client_username = logout_user(ssl_client_socket, data, client_username) # Sets client_username to None on successful logout and sends message to user, keeps user logged in and sends message if failed
+                    result = logout_user(ssl_client_socket, data, client_username)
+                    if result == {"suspicious": 1}:
+                        suspicious_counter += 1
+                    else:
+                        client_username = result
+                    if suspicious_counter >= 3:
+                        send_message(ssl_client_socket, json.dumps({
+                            "status": "ERROR",
+                            "message": "Too many suspicious actions. Connection will be closed."
+                        }))
+                        break
+
                     data = None
                 elif action == "exit":
                     send_message(ssl_client_socket, json.dumps({
