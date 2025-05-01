@@ -206,7 +206,7 @@ def send_file(tls_socket_client):
 
     # Prompt user for file to upload
     file_name = input("Enter the path/name of the file you want to send: ")
-    file_path = "./client/"+file_name
+    file_path = "./Files/"+file_name
     if not file_path:
         print("Error: No filename provided.")
         return
@@ -275,7 +275,7 @@ def download_file(tls_socket_client):
 
     decrypted_data = decrypt_file(tls_socket_client, payload["message"])
     filename = payload["message"]["file"]
-    save_file = f"decrypted_{filename}"
+    save_file = f"./Files/{filename}"
     try:
         with open(save_file, "wb") as f:
             f.write(decrypted_data)
