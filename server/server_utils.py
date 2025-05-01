@@ -328,13 +328,11 @@ def upload_file(ssl_client_socket, data):
     base_dir = './server/files/'
     os.makedirs(base_dir, exist_ok=1) # Ensure directory is available to store client files
     # Get file name
-    file = data["file"]
-    file_name = file+".json"
-    print(f"File name {file_name}")
-    filepath = os.path.join(base_dir, file_name)
-    if not file or not isinstance(file, str):
+    filename = data["file"]
+    filepath = os.path.join(base_dir, filename)
+    if not filename or not isinstance(filename, str):
              raise ValueError("Missing or invalid 'file' name in received data.")
-    print(f"Attempting to open '{file}'")
+    print(f"Attempting to open '{filename}'")
     data = json.dumps(data)
     try:
         with open(filepath, 'w') as f:
@@ -344,7 +342,7 @@ def upload_file(ssl_client_socket, data):
                 "message": "Server successfully uploaded file"
             }))
     except IOError as e:
-        print(f"IO Error writing message file {file}: {e}")
+        print(f"IO Error writing message file {filename}: {e}")
     except Exception as e:
         send_message(ssl_client_socket, json.dumps({
             "status": "ERROR",

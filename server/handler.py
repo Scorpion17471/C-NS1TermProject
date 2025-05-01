@@ -4,7 +4,9 @@ import logging
 import threading
 
 import json
-from server_utils import set_online, register_user, login_user, add_user_friend, remove_user_friend, show_online_friends, get_user_key, save_public_key, upload_file, logout_user
+
+from server_utils import set_online, register_user, login_user, add_user_friend, remove_user_friend, show_online_friends, get_user_key, save_public_key, upload_file, logout_user, get_and_send_file
+
 from sconnector import send_message, receive_message
 
 # Program instance main function
