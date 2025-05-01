@@ -33,8 +33,7 @@ def menu2():
                 3. Show Friends Online
                 4. Send File
                 5. Download File
-                6. Send DM
-                7. Logout
+                6. Logout
             """))
         except ValueError:
             print("Invalid input. Please enter a number between 1 and 6.")
@@ -207,7 +206,8 @@ def send_file(tls_socket_client):
 
     # Prompt user for file to upload
     file_name = input("Enter the path/name of the file you want to send: ")
-    file_path = "./client/"+file_name
+    file_path = "./Files/"+file_name
+    
     if not file_path:
         print("Error: No filename provided.")
         return
@@ -242,7 +242,7 @@ def send_file(tls_socket_client):
                 return
             # Print server response
             if data["status"] == "ERROR":
-                print(f"\Send failed: {data["message"]}")
+                print(f"\nSend failed: {data["message"]}")
             elif data["status"] == "OK":
                 print(f"\n{data["message"]}")
                 # Save account details, send server public key
@@ -276,7 +276,7 @@ def download_file(tls_socket_client):
 
     decrypted_data = decrypt_file(tls_socket_client, payload["message"])
     filename = payload["message"]["file"]
-    save_file = f"decrypted_{filename}"
+    save_file = f"./Files/{filename}"
     try:
         with open(save_file, "wb") as f:
             f.write(decrypted_data)
@@ -311,5 +311,3 @@ def send_logout_request(tls_socket_client):
     except Exception as e:
         print(f"Error sending logout request: {e}")
         return True # User is still logged in
-#send_file(tls_socket_client)
-#send_DM(tls_socket_client)

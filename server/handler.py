@@ -3,9 +3,10 @@ import ssl
 import logging
 import threading
 
-import json 
-from server_utils import *
-from server_utils import register_user, login_user, add_user_friend, remove_user_friend, show_online_friends, get_user_key, save_public_key, upload_file, logout_user
+import json
+
+from server_utils import set_online, register_user, login_user, add_user_friend, remove_user_friend, show_online_friends, get_user_key, save_public_key, upload_file, logout_user, get_and_send_file
+
 from sconnector import send_message, receive_message
 
 # Program instance main function
@@ -19,16 +20,15 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
     # 3. Add Friend -NEEDS LOGIN
     # 4. Remove Friend -NEEDS LOGIN
     # 5. Show Friends Online -NEEDS LOGIN
-    # 6. Send DM -NEEDS LOGIN
-    # 7. Send File -NEEDS LOGIN
-    # 8. Logout/Exit
+    # 6. Send File -NEEDS LOGIN
+    # 7. Logout/Exit
 
     # Client Instance Main Loop
     try:
         client_username = None
         while True:
             # Receive message from client
-            request = receive_message(ssl_client_socket, None)
+            request = receive_message(ssl_client_socket)
             if request is not None:
                 try:
                     data = json.loads(request)  # Parse incoming JSON message
@@ -61,17 +61,14 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
                 elif action == "show_online":
                     show_online_friends(ssl_client_socket, data, client_username)  # Call the show_online function from server_utils.py
                     data = None  # Clear data after processing
-                # Send file ==========================WIP========================== needs to be implemented
+                # Send file (DONE)
                 elif action == "send_file":
                     upload_file(ssl_client_socket, data, client_username)  # Call the send_file function from
                     data = None  # Clear data after processing
-                # Send DM ==========================WIP========================== needs to be implemented
+                # Get file (DONE)
                 elif action == "download":
                     get_and_send_file(ssl_client_socket,client_username)
                     data = None
-                elif action == "send_dm":
-                    #send_dm(ssl_client_socket, data, client_username)  # Call the send_dm function from server_utils.py
-                    data = None  # Clear data after processing
                 # Logout (DONE)
                 elif action == "logout":
                     client_username = logout_user(ssl_client_socket, data, client_username) # Sets client_username to None on successful logout and sends message to user, keeps user logged in and sends message if failed
@@ -100,6 +97,8 @@ def handle_client(ssl_client_socket: ssl.SSLSocket, client_address):
     finally:
         logging.info(f"Closing handler")
         try:
+            if client_username:
+                set_online(client_username, False)
             ssl_client_socket.shutdown(socket.SHUT_RDWR)
         except:
             pass

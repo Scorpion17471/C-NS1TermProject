@@ -4,13 +4,14 @@ import hashlib
 import threading
 import time
 import random
+import bcrypt
 from Crypto.Hash import SHA256
 from sconnector import send_message, receive_message
 
 # Path to the JSON file where user data will be stored
 #file_dir = os.path.dirname(os.path.abspath(__file__))
 #DATA_FILE = os.path.join(file_dir, "user_data.json")
-DATA_FILE = "./server/user_data.json"
+DATA_FILE = "./user_data.json"
 
 # Function to generate a random wait time between provided seconds in 0.1 second increments default is 0.1 to 1.3 seconds
 def randomwait(lower=1, upper=13):
@@ -19,7 +20,7 @@ def randomwait(lower=1, upper=13):
 def load_users():
     """Load existing user data from a JSON file"""
     with threading.Lock() as loadlock:
-        if (not os.path.exists(DATA_FILE)) or (os.path.getsize(DATA_FILE) == 0):
+        if not os.path.exists(DATA_FILE) or open(DATA_FILE, "r").read() == "":
             with open(DATA_FILE, "w") as f:
                 json.dump({"users": []}, f, indent=4)
         with open(DATA_FILE, "r") as f:
@@ -37,8 +38,8 @@ def save_users(data):
             json.dump(current_data, f, indent=4)
 
 def hash_password(password):
-    """Hash password using SHA-256 for storage"""
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Hash password using SHA256 -> bcrypt + salting for storage"""
+    return bcrypt.hashpw(hashlib.sha256(password.encode("utf-8")).hexdigest().encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 def user_exists(username):
     """Check if a user with the given username already exists"""
@@ -50,7 +51,6 @@ def create_user(name, email, username, password, key):
     """Create a new user account and store it in the JSON file"""
     if user_exists(username):
         return {"status": "ERROR", "message": "Username is already taken."}
-    
     user = {
         "name": name,
         "email": email,
@@ -60,7 +60,6 @@ def create_user(name, email, username, password, key):
         "friends": [],  # New users have no friends by default
         "key": key,
     }
-    
     data = load_users()
     data["users"].append(user)
     
@@ -123,12 +122,15 @@ def login_user(ssl_client_socket, data):
             return None
 
         # Compare server-side hashed password
-        if user["password"] != hash_password(password):
-            send_message(ssl_client_socket, json.dumps({
-                "status": "ERROR",
-                "message": "Invalid username or password."
-            }))
-            return None
+        try:
+            if not bcrypt.checkpw(hashlib.sha256(password.encode("utf-8")).hexdigest().encode("utf-8"), user["password"].encode("utf-8")):
+                send_message(ssl_client_socket, json.dumps({
+                    "status": "ERROR",
+                    "message": "Invalid username or password."
+                }))
+                return None
+        except Exception as e:
+            print(e)
 
         # Set user as online
         user["online"] = True
@@ -326,13 +328,11 @@ def upload_file(ssl_client_socket, data):
     base_dir = './server/files/'
     os.makedirs(base_dir, exist_ok=1) # Ensure directory is available to store client files
     # Get file name
-    file = data["file"]
-    file_name = file+".json"
-    print(f"File name {file_name}")
-    filepath = os.path.join(base_dir, file_name)
-    if not file or not isinstance(file, str):
+    filename = data["file"]
+    filepath = os.path.join(base_dir, filename)
+    if not filename or not isinstance(filename, str):
              raise ValueError("Missing or invalid 'file' name in received data.")
-    print(f"Attempting to open '{file}'")
+    print(f"Attempting to open '{filename}'")
     data = json.dumps(data)
     try:
         with open(filepath, 'w') as f:
@@ -342,7 +342,7 @@ def upload_file(ssl_client_socket, data):
                 "message": "Server successfully uploaded file"
             }))
     except IOError as e:
-        print(f"IO Error writing message file {file}: {e}")
+        print(f"IO Error writing message file {filename}: {e}")
     except Exception as e:
         send_message(ssl_client_socket, json.dumps({
             "status": "ERROR",
@@ -386,12 +386,7 @@ def save_public_key(client_username, user_data):
 
 def logout_user(ssl_client_socket, data, client_username=None):
     try:
-        users = load_users()["users"]
-        user = next((u for u in users if u["username"] == client_username), None)
-
-        # Set user as online
-        user["online"] = False
-        save_users({"users": users})  # Save updated user list
+        set_online(client_username, False)
 
         send_message(ssl_client_socket, json.dumps({
             "status": "OK",
@@ -406,6 +401,15 @@ def logout_user(ssl_client_socket, data, client_username=None):
             "message": f"Logout failed: {str(e)}"
         }))
         return client_username # Keep user logged in
+
+def set_online(username, status):
+    users = load_users()["users"]
+    user = next((u for u in users if u["username"] == username), None)
+
+    # Set user as online
+    user["online"] = status
+    save_users({"users": users})  # Save updated user list
+
 def get_and_send_file(ssl_client_socket, client_username):
     folder_path = './server/files/'
     matching_files = ''
