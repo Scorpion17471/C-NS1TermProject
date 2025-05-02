@@ -225,7 +225,6 @@ def send_file(tls_socket_client):
 
     payload = encrypt_file(tls_socket_client, file_bytes, file_name)
     if not payload:
-        os.system('cls' if os.name == 'nt' else 'clear') 
         print(f"Error encrypting file")
         return
     message = json.dumps(payload)
@@ -266,9 +265,7 @@ def download_file(tls_socket_client):
     try:
         send_message(tls_socket_client, message)
         response = receive_message(tls_socket_client, None)
-        print(f"Server response: {response}")
         payload = json.loads(response)
-        print(f"Type of payload {type(payload)} ")
         if payload["status"] == "ERROR":
             print("Server experienced issues retrieving data")
     except Exception as e:
@@ -276,7 +273,7 @@ def download_file(tls_socket_client):
 
     decrypted_data = decrypt_file(tls_socket_client, payload["message"])
     filename = payload["message"]["file"]
-    save_file = f"./Files/{filename}"
+    save_file = f"./Files/{filename}_download"
     try:
         with open(save_file, "wb") as f:
             f.write(decrypted_data)

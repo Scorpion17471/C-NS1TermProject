@@ -22,7 +22,6 @@ def encrypt_file(tls_socket, data, file_name):
     send_message(tls_socket, message) 
     response = receive_message(tls_socket, None)
     message_r = json.loads(response)
-    print(response)
     if message_r["status"] == "ERROR":
         print(message_r["message"])
         return 0

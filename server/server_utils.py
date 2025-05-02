@@ -286,7 +286,10 @@ def get_user_key(ssl_client_socket, client_username, data):
             break
     if not recipient_found:
         print(f"Not able to find {recipient}")
-        return
+        send_message(ssl_client_socket, json.dumps({
+            "status": "ERROR",
+            "message": f"Not able to find {recipient}"
+        }))
     else:
         if friendlist is None:
          print(f"Recipient {recipient} has no friend list data.")
@@ -308,7 +311,11 @@ def get_user_key(ssl_client_socket, client_username, data):
                             if isinstance(user, dict) and user.get("username") == recipient: #find matching user, copy and send public key 
                                 public_key = user.get("key")
                                 print(f"User key: {public_key}\n\n")
-                                send_message(ssl_client_socket, json.dumps({"key": public_key}))
+                                send_message(ssl_client_socket, json.dumps({
+                                    "status": "OK",
+                                    "key": public_key
+                                    }))
+                                print(f"Key sent to {client_username}")
                 except Exception as e:
                     print(f"Error retrieving user key")
                     send_message(ssl_client_socket, json.dumps({
@@ -316,16 +323,11 @@ def get_user_key(ssl_client_socket, client_username, data):
                         "message": "Error retrieving public key"
                     }))
                 break # Exit loop once friend is found
-            else:
-                send_message(ssl_client_socket, json.dumps({
-                    "status": "ERROR",
-                    "message": "You are not friends with {recipient}"
-                }))
 
 # Process and save client uploaded files
 def upload_file(ssl_client_socket, data):
     print("upload_file function called")
-    base_dir = './server/files/'
+    base_dir = './Files/'
     os.makedirs(base_dir, exist_ok=1) # Ensure directory is available to store client files
     # Get file name
     filename = data["file"]
@@ -411,7 +413,7 @@ def set_online(username, status):
     save_users({"users": users})  # Save updated user list
 
 def get_and_send_file(ssl_client_socket, client_username):
-    folder_path = './server/files/'
+    folder_path = './Files/'
     matching_files = ''
     print(client_username)
     # --- 1. Validate Folder Path ---
