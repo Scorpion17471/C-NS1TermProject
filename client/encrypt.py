@@ -22,26 +22,26 @@ def encrypt_file(tls_socket, data, file_name):
     send_message(tls_socket, message) 
     response = receive_message(tls_socket, None)
     message_r = json.loads(response)
-        # if message_r["status"] == "ERROR":
-        #     print(message_r["message"])
-        #     return 0
-        # else:
-    print(f"Response received {response}")
-    pubkey = message_r['key']
-    try:
-        # Try loading and re-exporting to verify its format and content
-        temp_pub_key = RSA.import_key(pubkey)
-        re_exported_pub_key = temp_pub_key.export_key().decode()
-        # print(f"DEBUG: Verified and Re-exported Retrieved Public Key:\n{re_exported_pub_key}")
-    except Exception as e_pub:
-        print(f"DEBUG: Error validating/re-exporting retrieved public key: {e_pub}")
-    except Exception as e:
-        print(f"Error retrieving client's public key: '{e}'")
-        input("Returning to menu, press Enter to continue...")
-        os.system('cls' if os.name == 'nt' else 'clear')  # Clear the screen
-    except json.JSONDecodeError:
-            print("Invalid JSON format in response, please try again.")
-            return
+    if message_r["status"] == "ERROR":
+        print(message_r["message"])
+        return 0
+    else:
+        print(f"Response received {response}")
+        pubkey = message_r['key']
+        try:
+            # Try loading and re-exporting to verify its format and content
+            temp_pub_key = RSA.import_key(pubkey)
+            re_exported_pub_key = temp_pub_key.export_key().decode()
+            # print(f"DEBUG: Verified and Re-exported Retrieved Public Key:\n{re_exported_pub_key}")
+        except Exception as e_pub:
+            print(f"DEBUG: Error validating/re-exporting retrieved public key: {e_pub}")
+        except Exception as e:
+            print(f"Error retrieving client's public key: '{e}'")
+            input("Returning to menu, press Enter to continue...")
+            os.system('cls' if os.name == 'nt' else 'clear')  # Clear the screen
+        except json.JSONDecodeError:
+                print("Invalid JSON format in response, please try again.")
+                return
 
     # 2. Generate Session Key
     session_key = get_random_bytes(AES_KEY_SIZE)
