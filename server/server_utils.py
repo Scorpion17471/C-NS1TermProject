@@ -159,13 +159,13 @@ def add_user_friend(ssl_client_socket, data, username=None):
             "status": "OK",
             "message": f"{data["friend_username"]} added to friends list if registered and not in list already"
         }))
-        return {"suspicious": 1}
+        return
     elif username == data["friend_username"]:
         send_message(ssl_client_socket, json.dumps({
             "status": "ERROR",
             "message": f"Cannot add self to friends list"
         }))
-        return {"suspicious": 0}
+        return
     else:
         userdata = load_users()
         if user_exists(data["friend_username"]):
@@ -186,7 +186,6 @@ def add_user_friend(ssl_client_socket, data, username=None):
                 "status": "ERROR",
                 "message": f"Failed to add friend: {str(e)}"
             }))
-        return {"suspicious": 0}
 
 # Function to handle adding friends
 def remove_user_friend(ssl_client_socket, data, username=None):
@@ -197,7 +196,7 @@ def remove_user_friend(ssl_client_socket, data, username=None):
             "status": "OK",
             "message": f"{data['friend_username']} removed from friends list/was not in friends list"
         }))
-        return {"suspicious": 1}
+        return
     else:
         userdata = load_users()
         # Remove friend from user's friend list if they exist, do nothing if not
@@ -220,8 +219,6 @@ def remove_user_friend(ssl_client_socket, data, username=None):
                 "message": f"Failed to remove friend: {str(e)}"
             }))
 
-            return {"suspicious": 0}
-
 # Function to show online friends
 def show_online_friends(ssl_client_socket, data, username=None):
     # If user is not logged in, wait for 0.4 to 2.6 seconds before sending false OK message
@@ -231,7 +228,7 @@ def show_online_friends(ssl_client_socket, data, username=None):
             "status": "OK",
             "message": f"No Friends Online"
         }))
-        return {"suspicious": 1}
+        return
     else:
         try:
             # Get online users
@@ -254,7 +251,6 @@ def show_online_friends(ssl_client_socket, data, username=None):
                 "status": "ERROR",
                 "message": f"Failed to get online friends: {str(e)}"
             }))
-            return {"suspicious": 0}
 
 # Get string list of all friends within user's friendlist who are online | returns None if no friends are online
 def get_online_friends(userdata, username):
@@ -388,16 +384,9 @@ def save_public_key(client_username, user_data):
     except Exception as e: 
         print(f"An unexpected error occurred saving the updated record: {e}")
 
-def logout_user(ssl_client_socket, data, username=None):
-        
-    if not username:
-        send_message(ssl_client_socket, json.dumps({
-            "status": "ERROR",
-            "message": "You are not logged in."
-        }))
-        return {"suspicious": 1}
+def logout_user(ssl_client_socket, data, client_username=None):
     try:
-        set_online(username, False)
+        set_online(client_username, False)
 
         send_message(ssl_client_socket, json.dumps({
             "status": "OK",
@@ -411,7 +400,7 @@ def logout_user(ssl_client_socket, data, username=None):
             "status": "ERROR",
             "message": f"Logout failed: {str(e)}"
         }))
-        return username # Keep user logged in
+        return client_username # Keep user logged in
 
 def set_online(username, status):
     users = load_users()["users"]
@@ -421,14 +410,7 @@ def set_online(username, status):
     user["online"] = status
     save_users({"users": users})  # Save updated user list
 
-def get_and_send_file(ssl_client_socket, client_username=None):
-    if not client_username:
-        send_message(ssl_client_socket, json.dumps({
-            "status": "ERROR",
-            "message": "Unauthorized file access attempt."
-        }))
-        return {"suspicious": 1}
-        
+def get_and_send_file(ssl_client_socket, client_username):
     folder_path = './server/files/'
     matching_files = ''
     print(client_username)
@@ -478,4 +460,3 @@ def get_and_send_file(ssl_client_socket, client_username=None):
         "status" : "OK",
         "message" : file_data
     }))
-    return {"suspicious": 0}
