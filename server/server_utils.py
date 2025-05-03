@@ -11,7 +11,7 @@ from sconnector import send_message, receive_message
 # Path to the JSON file where user data will be stored
 #file_dir = os.path.dirname(os.path.abspath(__file__))
 #DATA_FILE = os.path.join(file_dir, "user_data.json")
-DATA_FILE = "./user_data.json"
+DATA_FILE = os.path.join(os.getcwd(), "user_data.json")
 
 # Function to generate a random wait time between provided seconds in 0.1 second increments default is 0.1 to 1.3 seconds
 def randomwait(lower=1, upper=13):
@@ -157,7 +157,7 @@ def add_user_friend(ssl_client_socket, data, username=None):
         randomwait()
         send_message(ssl_client_socket, json.dumps({
             "status": "OK",
-            "message": f"{data["friend_username"]} added to friends list if registered and not in list already"
+            "message": f"{data['friend_username']} added to friends list if registered and not in list already"
         }))
         return
     elif username == data["friend_username"]:
@@ -179,7 +179,7 @@ def add_user_friend(ssl_client_socket, data, username=None):
             save_users(userdata)  # Save the updated data to the file
             send_message(ssl_client_socket, json.dumps({
                 "status": "OK",
-                "message": f"{data["friend_username"]} added to friends list if registered and not in list already"
+                "message": f"{data['friend_username']} added to friends list if registered and not in list already"
             }))
         except Exception as e:
             send_message(ssl_client_socket, json.dumps({
@@ -327,7 +327,7 @@ def get_user_key(ssl_client_socket, client_username, data):
 # Process and save client uploaded files
 def upload_file(ssl_client_socket, data):
     print("upload_file function called")
-    base_dir = './Files/'
+    base_dir = os.path.join(os.getcwd(), 'Files')
     os.makedirs(base_dir, exist_ok=1) # Ensure directory is available to store client files
     # Get file name
     filename = data["file"]
@@ -413,7 +413,7 @@ def set_online(username, status):
     save_users({"users": users})  # Save updated user list
 
 def get_and_send_file(ssl_client_socket, client_username):
-    folder_path = './Files/'
+    folder_path = os.path.join(os.getcwd(), 'Files')
     matching_files = ''
     print(client_username)
     # --- 1. Validate Folder Path ---

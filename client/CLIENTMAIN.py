@@ -12,14 +12,14 @@ import json
 
 def main():
     # Check if client key directory exists/make if not
-    if not os.path.isdir("./keys"):
-        os.makedirs("./keys")
+    if not os.path.isdir(os.path.join(os.getcwd(), "keys")):
+        os.makedirs(os.path.join(os.getcwd(), "keys"))
     # Check if both client keys can be retrieved, if not generate new keys and remove old keys if they exist
     if not get_public() or not get_private():
-        if os.path.isfile("./keys/public.pem"):
-            os.remove("./keys/public.pem")
-        if os.path.isfile("./keys/private.pem"):
-            os.remove("./keys/private.pem")
+        if os.path.isfile(os.path.join(os.getcwd(), "keys", "public.pem")):
+            os.remove(os.path.join(os.getcwd(), "keys", "public.pem"))
+        if os.path.isfile(os.path.join(os.getcwd(), "keys", "private.pem")):
+            os.remove(os.path.join(os.getcwd(), "keys", "private.pem"))
     # Generate new pseudorandom password protected private RSA key and public RSA key
         if not generate_key_pair(SHA256.new(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f").encode()).hexdigest()[:16]):
             print("Key generation failed.")

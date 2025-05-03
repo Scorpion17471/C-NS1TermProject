@@ -22,11 +22,11 @@ def generate_key_pair(password: str):
     
     # Export the private key in PEM format
     try:
-        with open('./keys/private.pem', 'wb') as f:
+        with open(os.path.join(os.getcwd(), "keys", "private.pem"), 'wb') as f:
             f.write(key.export_key(passphrase=password, pkcs=8, protection="PBKDF2WithHMAC-SHA512AndAES256-CBC", prot_params={'iteration_count':21000}))
         
         # Export the public key in PEM format
-        with open('./keys/public.pem', 'wb') as f:
+        with open(os.path.join(os.getcwd(), "keys", "private.pem"), 'wb') as f:
             f.write(key.publickey().export_key())
     except Exception as e:
         print(f"Error during key creation: {e}")
@@ -44,7 +44,7 @@ def get_private():
     i = 3
     while i > 0:
         try:
-            return RSA.import_key(open("./keys/private.pem").read(), input("Enter RSA Key password: "))
+            return RSA.import_key(open(os.path.join(os.getcwd(), "keys", "private.pem")).read(), input("Enter RSA Key password: "))
         except (FileNotFoundError) as e:
             print(f"Error retrieving private key: {e}")
             break
@@ -61,7 +61,7 @@ def get_public():
     Retrieve the public key from the file.
     """
     try:
-        return RSA.import_key(open("./keys/public.pem").read())
+        return RSA.import_key(open(os.path.join(os.getcwd(), "keys", "public.pem")).read())
     except (FileNotFoundError) as e:
         print(f"Error retrieving public key - File not found: {e}")
         return None
@@ -71,7 +71,7 @@ def get_publics():
     Retrieve the public key from the file.
     """
     try:
-        return open("./keys/public.pem").read()
+        return open(os.path.join(os.getcwd(), "keys", "public.pem")).read()
     except (FileNotFoundError) as e:
         print(f"Error retrieving public key - File not found: {e}")
         return None

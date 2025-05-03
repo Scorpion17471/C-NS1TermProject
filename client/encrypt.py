@@ -3,7 +3,7 @@ from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
 from cconnector import send_message, receive_message
-import json, os
+import json
 import traceback
 
 AES_KEY_SIZE = 32 #256 bits
@@ -37,8 +37,6 @@ def encrypt_file(tls_socket, data, file_name):
             print(f"DEBUG: Error validating/re-exporting retrieved public key: {e_pub}")
         except Exception as e:
             print(f"Error retrieving client's public key: '{e}'")
-            input("Returning to menu, press Enter to continue...")
-            os.system('cls' if os.name == 'nt' else 'clear')  # Clear the screen
         except json.JSONDecodeError:
                 print("Invalid JSON format in response, please try again.")
                 return

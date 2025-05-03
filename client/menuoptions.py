@@ -62,9 +62,9 @@ def send_registration_request(tls_socket):
                 return
             # Print server response
             if data["status"] == "ERROR":
-                print(f"\nRegistration failed: {data["message"]}")
+                print(f"\nRegistration failed: {data['message']}")
             elif data["status"] == "OK":
-                print(f"\n{data["message"]}")
+                print(f"\n{data['message']}")
     except Exception as e:
         print(f"Error sending registration data: {e}")
 
@@ -148,9 +148,9 @@ def add_friend(tls_socket_client):
                 return
             # Print server response
             if data["status"] == "ERROR":
-                print(f"\nFailed to add friend: {data["message"]}")
+                print(f"\nFailed to add friend: {data['message']}")
             elif data["status"] == "OK":
-                print(f"\n{data["message"]}")
+                print(f"\n{data['message']}")
     except Exception as e:
         print(f"Error sending add friend data: {e}")
 
@@ -173,9 +173,9 @@ def remove_friend(tls_socket_client):
                 return
             # Print server response
             if data["status"] == "ERROR":
-                print(f"\nFailed to remove friend: {data["message"]}")
+                print(f"\nFailed to remove friend: {data['message']}")
             elif data["status"] == "OK":
-                print(f"\n{data["message"]}")
+                print(f"\n{data['message']}")
     except Exception as e:
         print(f"Error sending remove friend data: {e}")
 
@@ -196,17 +196,17 @@ def show_online(tls_socket_client):
                 return
             # Print server response
             if data["status"] == "ERROR":
-                print(f"\nFailed to get friend list: {data["message"]}")
+                print(f"\nFailed to get friend list: {data['message']}")
             elif data["status"] == "OK":
-                print(f"Friends Online:\n\n\t{data["message"]}\n")
+                print(f"Friends Online:\n\n\t{data['message']}\n")
     except Exception as e:
         print(f"Error sending request for online friends data: {e}")
 
 def send_file(tls_socket_client):
 
     # Prompt user for file to upload
-    file_name = input("Enter the path/name of the file you want to send: ")
-    file_path = "./Files/"+file_name
+    file_path = input("Enter the absolute path of the file you want to send: ")
+    file_name = file_path.split('\\' if os.name == 'nt' else '/')[-1:]
     
     if not file_path:
         print("Error: No filename provided.")
@@ -241,18 +241,15 @@ def send_file(tls_socket_client):
                 return
             # Print server response
             if data["status"] == "ERROR":
-                print(f"\nSend failed: {data["message"]}")
+                print(f"\nSend failed: {data['message']}")
             elif data["status"] == "OK":
-                print(f"\n{data["message"]}")
+                print(f"\n{data['message']}")
                 # Save account details, send server public key
-            # Return to client menu
-            input("Returning to menu, press Enter to continue...")
         else:
             print(f"Response {response}")
             return
-        os.system('cls' if os.name == 'nt' else 'clear')  # Clear the screen
     except Exception as e:
-         print("Error in /client/encrypt.py")
+         print("Error in client/encrypt.py")
 
 def download_file(tls_socket_client):
     # Send server check check message
@@ -273,7 +270,7 @@ def download_file(tls_socket_client):
 
     decrypted_data = decrypt_file(tls_socket_client, payload["message"])
     filename = payload["message"]["file"]
-    save_file = f"./Files/{filename}_download"
+    save_file = os.path.join(os.getcwd(), "Files", filename+"_download")
     try:
         with open(save_file, "wb") as f:
             f.write(decrypted_data)
@@ -300,7 +297,7 @@ def send_logout_request(tls_socket_client):
                 return
             # Print server response
             if data["status"] == "ERROR":
-                print(f"\nFailed to logout: {data["message"]}")
+                print(f"\nFailed to logout: {data['message']}")
                 return True # User is still logged in
             elif data["status"] == "OK":
                 print(f"You have been logged out\n")
