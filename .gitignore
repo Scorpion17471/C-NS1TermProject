@@ -60,11 +60,6 @@ venv.bak/
 # VS Code settings
 .vscode/
 
-# Certificate files - IMPORTANT!
-# Add any PRIVATE keys or sensitive files here. Public certs (like cert.pem) are often okay.
-# Example: If serverr.pem is a private key, add it. Check certrec.csr too.
-certs/
-
 # Client keys
 keys/
 
