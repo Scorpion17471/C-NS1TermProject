@@ -455,12 +455,17 @@ def get_and_send_file(ssl_client_socket, client_username):
         with open(file_path, 'r') as encrypted_file:
             file_data = json.load(encrypted_file)
             print(f"Successfully loaded file: {filename}")
+            send_message(ssl_client_socket, json.dumps({
+                "status" : "OK",
+                "message" : file_data
+            }))
+        ack = recieve_message(ssl_client_socket, None)
+        ackdata = json.loads(json.dumps({"status": "ERROR"}))
+        try:
+            ackdata = json.loads(ack)  # Parse incoming JSON message
+        except json.JSONDecodeError:
+            print("Invalid JSON format in response, please try again.")
+        if ackdata["status"] == "OK":
+            os.remove(file_path)
     except Exception as e:
         print(f"There was an error retrieving the file: {e}")
-    send_message(ssl_client_socket, json.dumps({
-        "status" : "OK",
-        "message" : file_data
-    }))
-    ack = recieve_message(ssl_client_socket, None)
-    if ack["status"] == "OK":
-        os.remove(file_path)
