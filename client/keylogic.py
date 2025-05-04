@@ -26,7 +26,7 @@ def generate_key_pair(password: str):
             f.write(key.export_key(passphrase=password, pkcs=8, protection="PBKDF2WithHMAC-SHA512AndAES256-CBC", prot_params={'iteration_count':21000}))
         
         # Export the public key in PEM format
-        with open(os.path.join(os.getcwd(), "keys", "private.pem"), 'wb') as f:
+        with open(os.path.join(os.getcwd(), "keys", "public.pem"), 'wb') as f:
             f.write(key.publickey().export_key())
     except Exception as e:
         print(f"Error during key creation: {e}")
