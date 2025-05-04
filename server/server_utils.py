@@ -459,7 +459,7 @@ def get_and_send_file(ssl_client_socket, client_username):
                 "status" : "OK",
                 "message" : file_data
             }))
-        ack = recieve_message(ssl_client_socket, None)
+        ack = receive_message(ssl_client_socket, None)
         ackdata = json.loads(json.dumps({"status": "ERROR"}))
         try:
             ackdata = json.loads(ack)  # Parse incoming JSON message
