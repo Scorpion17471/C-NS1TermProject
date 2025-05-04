@@ -274,10 +274,19 @@ def download_file(tls_socket_client):
         with open(save_file, "wb") as f:
             f.write(decrypted_data)
         print("File saved")
+        send_message(tls_socket_client, json.dumps({
+            "status": "OK"
+        }))
     except KeyError as e:
         print(f"ERROR: Missing expected key in received payload: {e}")
+        send_message(tls_socket_client, json.dumps({
+            "status": "ERROR"
+        }))
     except Exception as e:
         print(f"An unexpected error occurred during decryption: {e}")
+        send_message(tls_socket_client, json.dumps({
+            "status": "ERROR"
+        }))
 
 
 def send_logout_request(tls_socket_client):

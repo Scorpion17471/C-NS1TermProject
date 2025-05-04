@@ -461,3 +461,6 @@ def get_and_send_file(ssl_client_socket, client_username):
         "status" : "OK",
         "message" : file_data
     }))
+    ack = recieve_message(ssl_client_socket)
+    if ack["status"] == "OK":
+        os.remove(file_path)
