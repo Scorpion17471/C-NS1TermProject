@@ -13,7 +13,7 @@ def main():
 
     # Construct the absolute path to the certs directory relative to the script's location
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    certs_dir = os.path.join(script_dir, "certs")
+    certs_dir = os.path.join(os.getcwd(), "certs")
     cert_path = os.path.join(certs_dir, "cert.pem")
     key_path = os.path.join(certs_dir, "serverr.pem") # Assuming serverr.pem is the key
 

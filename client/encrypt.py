@@ -3,6 +3,7 @@ from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
 from cconnector import send_message, receive_message
+from keylogic import get_private
 import json
 import traceback
 
@@ -26,7 +27,6 @@ def encrypt_file(tls_socket, data, file_name):
         print(message_r["message"])
         return 0
     else:
-        print(f"Response received {response}")
         pubkey = message_r['key']
         try:
             # Try loading and re-exporting to verify its format and content
