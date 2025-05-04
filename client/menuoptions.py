@@ -269,7 +269,8 @@ def download_file(tls_socket_client):
 
     decrypted_data = decrypt_file(tls_socket_client, payload["message"])
     filename = payload["message"]["file"]
-    save_file = os.path.join(os.getcwd(), "downloads", filename)
+    download_folder = os.path.join(os.getcwd(), "downloads")
+    save_file = os.path.join(download_folder, filename)
     try:
         with open(save_file, "wb") as f:
             f.write(decrypted_data)
