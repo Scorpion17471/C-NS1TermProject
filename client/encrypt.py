@@ -67,20 +67,9 @@ def encrypt_file(tls_socket, data, file_name):
 
 
 def decrypt_file(tls_socket, payload) : # payload is the nested 'message' dict
-    private_key_obj = None # Initialize
-    private_key_path = './keys/private.pem'
-    passphrase = input("Enter RSA Key password: ")
-    try:
-        with open(private_key_path, 'r') as f:
-            pem_data = f.read()
-        key_obj = RSA.import_key(pem_data, passphrase=passphrase)
-        print(f"SUCCESS: Private key loaded successfully.")
-    # Optional: Check if it can export its public key
-        pub_key_pem = key_obj.publickey().export_key().decode()
-        print("Successfully exported corresponding public key:")
-        print(pub_key_pem)
-    except Exception as e_exp:
-         print(f"Could not export public key from loaded private key: {e_exp}")
+    key_obj = get_private()
+    if not key_obj:
+        print("Could not load private key")
     try:
         print("Decoding received data")
         # Decode Base64 data

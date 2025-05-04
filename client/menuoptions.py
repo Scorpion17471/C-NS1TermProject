@@ -206,7 +206,7 @@ def send_file(tls_socket_client):
 
     # Prompt user for file to upload
     file_path = input("Enter the absolute path of the file you want to send: ")
-    file_name = file_path.split('\\' if os.name == 'nt' else '/')[-1:]
+    file_name = file_path.split('\\' if os.name == 'nt' else '/')[-1]
     
     if not file_path:
         print("Error: No filename provided.")
@@ -233,7 +233,6 @@ def send_file(tls_socket_client):
         send_message(tls_socket_client, message)
         response = receive_message(tls_socket_client, None)
         if response is not None:
-            print(f"Response {response}")
             try:
                 data = json.loads(response)  # Parse incoming JSON message
             except json.JSONDecodeError:
@@ -270,7 +269,7 @@ def download_file(tls_socket_client):
 
     decrypted_data = decrypt_file(tls_socket_client, payload["message"])
     filename = payload["message"]["file"]
-    save_file = os.path.join(os.getcwd(), "Files", filename+"_download")
+    save_file = os.path.join(os.getcwd(), "downloads", filename)
     try:
         with open(save_file, "wb") as f:
             f.write(decrypted_data)

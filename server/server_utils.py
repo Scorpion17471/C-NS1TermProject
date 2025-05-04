@@ -310,7 +310,6 @@ def get_user_key(ssl_client_socket, client_username, data):
                         for user in user_list:
                             if isinstance(user, dict) and user.get("username") == recipient: #find matching user, copy and send public key 
                                 public_key = user.get("key")
-                                print(f"User key: {public_key}\n\n")
                                 send_message(ssl_client_socket, json.dumps({
                                     "status": "OK",
                                     "key": public_key
@@ -333,7 +332,7 @@ def upload_file(ssl_client_socket, data):
     filename = data["file"]
     filepath = os.path.join(base_dir, filename)
     if not filename or not isinstance(filename, str):
-             raise ValueError("Missing or invalid 'file' name in received data.")
+        raise ValueError("Missing or invalid 'file' name in received data.")
     print(f"Attempting to open '{filename}'")
     data = json.dumps(data)
     try:
